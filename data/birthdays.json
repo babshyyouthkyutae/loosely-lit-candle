@@ -1,0 +1,39 @@
+{
+  "records": [
+    {
+      "id": "5e45cb38",
+      "name": "익명",
+      "birthday": "1995-03-15",
+      "createdAt": "2026-04-18T20:38:19.514Z",
+      "messages": []
+    },
+    {
+      "id": "0bffc377",
+      "name": "박규태",
+      "birthday": "1998-09-08",
+      "createdAt": "2026-04-18T21:02:01.760Z",
+      "messages": []
+    },
+    {
+      "id": "0cb88226",
+      "name": "익명",
+      "birthday": "1995-03-15",
+      "createdAt": "2026-04-18T21:20:58.994Z",
+      "messages": []
+    },
+    {
+      "id": "27312700",
+      "name": "Kyutae",
+      "birthday": "1995-03-15",
+      "createdAt": "2026-04-18T21:22:14.909Z",
+      "messages": [
+        {
+          "id": "3f63dd13",
+          "content": "Thank you for holding on today. You are enough as you are.",
+          "author": "An old friend",
+          "createdAt": "2026-04-18T21:24:04.257Z"
+        }
+      ]
+    }
+  ]
+}
