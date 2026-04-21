@@ -73,6 +73,8 @@ interface BirthdayRecord {
   birthday: string;
   created_at: string;
   messages: Message[];
+  locked: boolean;           // 서버 사이드 생일 당일 체크 결과
+  lockedReason?: string;     // 잠금 이유 ("birthday_not_today" 등)
 }
 
 // ─── 날짜 유틸 ─────────────────────────────────────────
@@ -201,13 +203,14 @@ export default function BirthdayPage() {
   const { text: ddayText, daysLeft, isToday } = getDdayInfo(record.birthday);
   const hasMessages = record.messages.length > 0;
 
-  // 메시지 잠금 여부 (생일 당일에만 공개)
-  const messagesLocked = !isToday;
+  // 메시지 잠금 여부 → 서버 사이드 locked 플래그를 신뢰 (단일 진실 공급원)
+  // locked=true면 서버가 이미 messages:[] 반환했으므로 클라이언트 날짜 계산 불필요
+  const messagesLocked = record.locked;
 
   // Zero-Data: 생일 당일이고 메시지 없으면 시스템 메시지 표시
-  const displayMessages = isToday && !hasMessages
+  const displayMessages = !messagesLocked && !hasMessages
     ? [SYSTEM_WELCOME_MESSAGE]
-    : isToday
+    : !messagesLocked
     ? record.messages
     : [];
 
