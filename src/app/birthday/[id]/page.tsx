@@ -122,13 +122,33 @@ function formatRelativeDate(dateStr: string): string {
 }
 
 // ─── Zero-Data 기본 환영 메시지 ─────────────────────────
-const SYSTEM_WELCOME_MESSAGE = {
+type SystemMessage = {
+  id: string;
+  content: string;
+  author: string;
+  created_at: string;
+  isSystem: true;
+};
+
+type DisplayMessage = Message | SystemMessage;
+
+function isSystemMsg(msg: DisplayMessage): msg is SystemMessage {
+  return "isSystem" in msg && (msg as SystemMessage).isSystem === true;
+}
+
+const SYSTEM_WELCOME_MESSAGE: SystemMessage = {
   id: "system-welcome",
-  content: "당신이 태어난 날, 세상이 조금 더 따뜻해졌어요.\n오늘 이 촛불은 당신만을 위해 켜져 있어요. 🕯️",
+  content:
+    "오늘, 당신의 생일을 축하해요.\n\n"
+    + "혼자인 것 같아도, 누군가는 조용히 당신의 날을\n"
+    + "기억하고 있어요. 이 촛불은 오늘 당신만을\n"
+    + "위해 켜져 있어요. 불꽃이 흔들리는 동안\n"
+    + "잘 요온 것 같아요. 부디 오늘 하루, 온전히 당신이었으면 좋겠어요. 🕯️",
   author: "느슨한 촛불",
   created_at: new Date().toISOString(),
   isSystem: true,
 };
+
 
 // ─── 메인 컴포넌트 ──────────────────────────────────────
 export default function BirthdayPage() {
@@ -208,7 +228,7 @@ export default function BirthdayPage() {
   const messagesLocked = record.locked;
 
   // Zero-Data: 생일 당일이고 메시지 없으면 시스템 메시지 표시
-  const displayMessages = !messagesLocked && !hasMessages
+  const displayMessages: DisplayMessage[] = !messagesLocked && !hasMessages
     ? [SYSTEM_WELCOME_MESSAGE]
     : !messagesLocked
     ? record.messages
@@ -331,29 +351,87 @@ export default function BirthdayPage() {
 
           {/* ── 생일 당일: 메시지 표시 ── */}
           {!messagesLocked && (
-            <>
-              {displayMessages.length === 0 ? (
-                <div style={{ textAlign: "center", padding: "2.5rem 1rem" }}>
-                  <p style={{ fontSize: "0.875rem", color: "var(--text-secondary)", lineHeight: 1.8, fontWeight: 300 }}>
-                    아직 아무도 메시지를 남기지 않았어요.<br />링크를 공유해서 첫 번째 마음을 받아보세요.
-                  </p>
-                </div>
-              ) : (
-                <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: "1rem" }}>
-                  {displayMessages.map((msg, index) => (
-                    <motion.li
-                      key={msg.id}
-                      initial={{ opacity: 0, y: 12 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.1 + 0.2, duration: 0.5 }}
-                      style={{
-                        padding: "1.25rem",
-                        background: "var(--ivory-dark)",
-                        border: "1px solid var(--border)",
-                        borderRadius: "2px",
-                        ...(("isSystem" in msg && msg.isSystem) ? { opacity: 0.8, fontStyle: "italic" } : {}),
-                      }}
-                    >
+            <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: "1rem" }}>
+              {displayMessages.map((msg, index) => (
+                <motion.li
+                  key={msg.id}
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.12 + 0.2, duration: 0.55, ease: "easeOut" }}
+                >
+                  {isSystemMsg(msg) ? (
+                    // ─── 시스템 환영 메시지 카드 (특별 디자인) ───
+                    <div style={{
+                      padding: "1.75rem 1.5rem",
+                      background: "linear-gradient(135deg, rgba(212,168,120,0.10) 0%, rgba(196,149,106,0.05) 100%)",
+                      border: "1px solid var(--accent-light)",
+                      borderRadius: "4px",
+                      position: "relative",
+                      overflow: "hidden",
+                    }}>
+                      {/* 장식 선 */}
+                      <div style={{
+                        position: "absolute", top: 0, left: 0, right: 0,
+                        height: "2px",
+                        background: "linear-gradient(90deg, transparent, var(--accent), transparent)",
+                        opacity: 0.5,
+                      }} />
+
+                      {/* 촛불 + '\ub290슨한 \ucd1b\ubd88' 표시 */}
+                      <div style={{
+                        display: "flex", alignItems: "center", gap: "0.5rem",
+                        marginBottom: "1rem",
+                      }}>
+                        <svg width="14" height="16" viewBox="0 0 36 36" fill="none" aria-hidden="true">
+                          <rect x="14.5" y="18" width="7" height="15" rx="1.5" fill="#D4A878" opacity="0.5" />
+                          <ellipse cx="18" cy="10" rx="3.5" ry="5" fill="#F0C060" opacity="0.7" />
+                          <ellipse cx="18" cy="9" rx="2" ry="3.5" fill="#FFFDE4" opacity="0.9" />
+                        </svg>
+                        <span style={{
+                          fontSize: "0.65rem", letterSpacing: "0.15em",
+                          color: "var(--accent)", textTransform: "uppercase", fontWeight: 400,
+                        }}>
+                          느슨한 촛불
+                        </span>
+                        <span style={{
+                          fontSize: "0.6rem", color: "var(--text-muted)",
+                          padding: "0.1rem 0.4rem",
+                          border: "1px solid var(--border)",
+                          borderRadius: "999px", letterSpacing: "0.05em",
+                        }}>
+                          첫 번째 촛불
+                        </span>
+                      </div>
+
+                      {/* 본문 */}
+                      <p style={{
+                        fontSize: "0.9rem",
+                        color: "var(--text-primary)",
+                        lineHeight: 2.0,
+                        fontWeight: 300,
+                        whiteSpace: "pre-line",
+                        marginBottom: "1rem",
+                      }}>
+                        {msg.content}
+                      </p>
+
+                      {/* 하단 시간 */}
+                      <p style={{
+                        fontSize: "0.65rem", color: "var(--accent)",
+                        opacity: 0.55, letterSpacing: "0.05em",
+                        textAlign: "right",
+                      }}>
+                        생일 당일 자동 등록
+                      </p>
+                    </div>
+                  ) : (
+                    // ─── 일반 메시지 카드 ───
+                    <div style={{
+                      padding: "1.25rem",
+                      background: "var(--ivory-dark)",
+                      border: "1px solid var(--border)",
+                      borderRadius: "2px",
+                    }}>
                       <p style={{
                         fontSize: "0.9rem", color: "var(--text-primary)",
                         lineHeight: 1.9, fontWeight: 300, marginBottom: "0.75rem",
@@ -365,19 +443,15 @@ export default function BirthdayPage() {
                         <p style={{ fontSize: "0.7rem", color: "var(--text-muted)", letterSpacing: "0.05em" }}>
                           — {msg.author}
                         </p>
-                        {"isSystem" in msg && msg.isSystem ? (
-                          <p style={{ fontSize: "0.65rem", color: "var(--accent)", opacity: 0.6 }}>🕯️ 시스템</p>
-                        ) : (
-                          <p style={{ fontSize: "0.65rem", color: "var(--text-muted)", opacity: 0.7 }}>
-                            {formatRelativeDate(msg.created_at)}
-                          </p>
-                        )}
+                        <p style={{ fontSize: "0.65rem", color: "var(--text-muted)", opacity: 0.7 }}>
+                          {formatRelativeDate(msg.created_at)}
+                        </p>
                       </div>
-                    </motion.li>
-                  ))}
-                </ul>
-              )}
-            </>
+                    </div>
+                  )}
+                </motion.li>
+              ))}
+            </ul>
           )}
         </div>
 
