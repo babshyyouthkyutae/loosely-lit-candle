@@ -3,7 +3,82 @@
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useAnimation } from "framer-motion";
+
+// ─── Write페이지용 촛불 미니 컴포넌트 ─────────────────────────────────
+function WriteCandle({ flicker = false }: { flicker?: boolean }) {
+  const flameCtrl = useAnimation();
+  const glowCtrl = useAnimation();
+
+  useEffect(() => {
+    // 기본 호흡
+    flameCtrl.start({
+      scaleX: [1, 1.08, 0.93, 1.05, 0.97, 1],
+      scaleY: [1, 0.97, 1.06, 0.95, 1.03, 1],
+      y: [0, -1.5, 0.5, -1, 0, 0],
+      opacity: [0.85, 0.95, 0.8, 0.92, 0.88, 0.85],
+      transition: { duration: 3.2, repeat: Infinity, ease: "easeInOut" },
+    });
+    glowCtrl.start({
+      opacity: [0.3, 0.5, 0.28, 0.44, 0.32],
+      scale: [1, 1.06, 0.96, 1.03, 1],
+      transition: { duration: 3.2, repeat: Infinity, ease: "easeInOut" },
+    });
+  }, [flameCtrl, glowCtrl]);
+
+  useEffect(() => {
+    if (!flicker) return;
+    // 메시지 전송 성공 시 강한 일렇임
+    flameCtrl.start({
+      scaleX: [1, 1.28, 0.72, 1.22, 0.82, 1.14, 0.92, 1.06, 0.98, 1],
+      scaleY: [1, 0.82, 1.24, 0.8, 1.16, 0.88, 1.08, 0.94, 1.02, 1],
+      y: [0, -5, 3, -4, 2, -2.5, 1, -1.2, 0.3, 0],
+      opacity: [0.85, 1, 0.65, 1, 0.7, 0.96, 0.8, 0.93, 0.87, 0.85],
+      transition: {
+        duration: 2.0,
+        ease: "easeOut",
+        onComplete: () => {
+          flameCtrl.start({
+            scaleX: [1, 1.08, 0.93, 1.05, 0.97, 1],
+            scaleY: [1, 0.97, 1.06, 0.95, 1.03, 1],
+            y: [0, -1.5, 0.5, -1, 0, 0],
+            opacity: [0.85, 0.95, 0.8, 0.92, 0.88, 0.85],
+            transition: { duration: 3.2, repeat: Infinity, ease: "easeInOut" },
+          });
+        },
+      },
+    });
+    glowCtrl.start({
+      opacity: [0.3, 0.85, 0.2, 0.7, 0.3],
+      scale: [1, 1.5, 0.8, 1.3, 1],
+      transition: { duration: 2.0, ease: "easeOut" },
+    });
+  }, [flicker, flameCtrl, glowCtrl]);
+
+  return (
+    <div style={{ position: "relative", width: 32, height: 40, display: "flex", alignItems: "flex-end", justifyContent: "center", margin: "0 auto" }}>
+      <motion.div
+        animate={glowCtrl}
+        style={{
+          position: "absolute", top: -2, left: "50%", transform: "translateX(-50%)",
+          width: 56, height: 56, borderRadius: "50%",
+          background: "radial-gradient(circle, rgba(255,200,80,0.3) 0%, rgba(212,168,120,0.12) 50%, transparent 70%)",
+          pointerEvents: "none",
+        }}
+      />
+      <svg width="28" height="32" viewBox="0 0 36 36" fill="none" style={{ position: "relative", zIndex: 1 }} aria-hidden="true">
+        <rect x="14.5" y="16" width="7" height="17" rx="1.5" fill="#D4A878" opacity="0.55" />
+        <rect x="17.3" y="13.5" width="1.4" height="3.5" rx="0.5" fill="#8C6040" opacity="0.7" />
+        <motion.g animate={flameCtrl} style={{ originX: "18px", originY: "14px" } as React.CSSProperties}>
+          <ellipse cx="18" cy="9" rx="3.8" ry="5.5" fill="#F0C040" opacity="0.6" />
+          <ellipse cx="18" cy="8" rx="2.5" ry="4.2" fill="#FFD060" opacity="0.82" />
+          <ellipse cx="18" cy="7.5" rx="1.2" ry="2.6" fill="#FFFDE4" />
+          <ellipse cx="17.2" cy="7" rx="0.5" ry="1.1" fill="white" opacity="0.7" />
+        </motion.g>
+      </svg>
+    </div>
+  );
+}
 
 interface BirthdayRecord {
   id: string;
@@ -267,16 +342,9 @@ export default function WritePage() {
           style={cardStyle}
         >
           <div style={{ textAlign: "center", marginBottom: "2rem" }}>
-            <div style={{
-              width: "56px", height: "56px", borderRadius: "50%",
-              border: "1.5px solid var(--accent-light)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              margin: "0 auto 1.25rem",
-              background: "rgba(196, 149, 106, 0.06)",
-            }}>
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="1.5" aria-hidden="true">
-                <path d="M5 13l4 4L19 7" />
-              </svg>
+            {/* 메시지 전송 성공 → 촛불 일렁임 */}
+            <div style={{ marginBottom: "1.5rem" }}>
+              <WriteCandle flicker={true} />
             </div>
             <h1 style={{ fontSize: "1.25rem", fontWeight: 400, color: "var(--text-primary)", marginBottom: "0.625rem" }}>
               마음을 전달했어요

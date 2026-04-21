@@ -1,37 +1,37 @@
 @import "tailwindcss";
 
-/* ─── 라이트 테마 (아이보리) ─────────────────────────── */
+/* ─── 기본: 딥 웜 다크 (Deep Warm Dark) ─────────────────── */
 :root {
-  --ivory: #F8F4ED;
-  --ivory-dark: #EFE8D8;
-  --ivory-deep: #E6DABD;
-  --text-primary: #2C2416;
-  --text-secondary: #7A6A50;
-  --text-muted: #B0A08A;
-  --accent: #C4956A;
-  --accent-light: #E8C4A0;
-  --accent-warm: #D4A878;
-  --border: #D6CCB8;
-  --shadow: rgba(44, 36, 22, 0.08);
-  --card-bg: rgba(255, 252, 245, 0.9);
+  --ivory: #1C1812;
+  --ivory-dark: #241F18;
+  --ivory-deep: #2E271E;
+  --text-primary: #EDE3D0;
+  --text-secondary: #A89272;
+  --text-muted: #6E5E48;
+  --accent: #D4A878;
+  --accent-light: #8C6840;
+  --accent-warm: #C4956A;
+  --border: #3A3026;
+  --shadow: rgba(0, 0, 0, 0.35);
+  --card-bg: rgba(30, 24, 16, 0.92);
   --font-main: var(--font-nanum-myeongjo), 'Nanum Myeongjo', 'Georgia', serif;
 }
 
-/* ─── 딥 웜 다크 모드 ────────────────────────────────── */
-@media (prefers-color-scheme: dark) {
+/* ─── 라이트 모드 (시스템 밝기 선호 시에만) ─────────────── */
+@media (prefers-color-scheme: light) {
   :root {
-    --ivory: #1C1812;
-    --ivory-dark: #241F18;
-    --ivory-deep: #2E271E;
-    --text-primary: #EDE3D0;
-    --text-secondary: #A89272;
-    --text-muted: #6E5E48;
-    --accent: #D4A878;
-    --accent-light: #8C6840;
-    --accent-warm: #C4956A;
-    --border: #3A3026;
-    --shadow: rgba(0, 0, 0, 0.35);
-    --card-bg: rgba(30, 24, 16, 0.92);
+    --ivory: #F8F4ED;
+    --ivory-dark: #EFE8D8;
+    --ivory-deep: #E6DABD;
+    --text-primary: #2C2416;
+    --text-secondary: #7A6A50;
+    --text-muted: #B0A08A;
+    --accent: #C4956A;
+    --accent-light: #E8C4A0;
+    --accent-warm: #D4A878;
+    --border: #D6CCB8;
+    --shadow: rgba(44, 36, 22, 0.08);
+    --card-bg: rgba(255, 252, 245, 0.9);
   }
 }
 

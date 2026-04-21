@@ -3,7 +3,62 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { motion, useAnimation } from "framer-motion";
+
+// ─── 디지털 촛불 (birthday 페이지용) ──────────────────────
+function BirthdayCandle({ messageCount = 0, isToday = false }: { messageCount?: number; isToday?: boolean }) {
+  const flameCtrl = useAnimation();
+  const glowCtrl = useAnimation();
+
+  // 메시지 개수에 따른 강도 계산 (1~10 → 0.0~1.0 범위)
+  const intensity = Math.min(messageCount / 10, 1);
+  // 기본 호흡 속도: 메시지 많을수록 더 빠르게 일렁임
+  const duration = 3.2 - intensity * 1.2; // 3.2s → 2.0s
+  const scaleMax = 1.08 + intensity * 0.1; // 1.08 → 1.18
+
+  useEffect(() => {
+    flameCtrl.start({
+      scaleX: [1, scaleMax, 0.93, scaleMax * 0.97, 0.97, 1],
+      scaleY: [1, 0.97, 1.06 + intensity * 0.06, 0.95, 1.03, 1],
+      y: [0, -(1.5 + intensity * 2), 0.5, -1, 0, 0],
+      opacity: [0.85, 0.9 + intensity * 0.1, 0.78, 0.92, 0.88, 0.85],
+      transition: { duration, repeat: Infinity, ease: "easeInOut" },
+    });
+    glowCtrl.start({
+      opacity: [0.35 + intensity * 0.2, 0.55 + intensity * 0.25, 0.35, 0.5 + intensity * 0.15, 0.38],
+      scale: [1, 1.06 + intensity * 0.12, 0.96, 1.04, 1],
+      transition: { duration, repeat: Infinity, ease: "easeInOut" },
+    });
+  }, [flameCtrl, glowCtrl, duration, scaleMax, intensity]);
+
+  return (
+    <div style={{ position: "relative", width: 36, height: 44, display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
+      {/* glow */}
+      <motion.div
+        animate={glowCtrl}
+        style={{
+          position: "absolute", top: -4, left: "50%", transform: "translateX(-50%)",
+          width: isToday ? 72 : 52, height: isToday ? 72 : 52,
+          borderRadius: "50%",
+          background: isToday
+            ? "radial-gradient(circle, rgba(255,200,80,0.35) 0%, rgba(212,168,120,0.15) 50%, transparent 70%)"
+            : "radial-gradient(circle, rgba(212,168,120,0.22) 0%, rgba(196,149,106,0.08) 50%, transparent 70%)",
+          pointerEvents: "none",
+        }}
+      />
+      <svg width="36" height="36" viewBox="0 0 36 36" fill="none" style={{ position: "relative", zIndex: 1 }} aria-hidden="true">
+        <rect x="14.5" y="16" width="7" height="17" rx="1.5" fill="#D4A878" opacity="0.55" />
+        <rect x="17.3" y="13.5" width="1.4" height="3.5" rx="0.5" fill="#8C6040" opacity="0.7" />
+        <motion.g animate={flameCtrl} style={{ originX: "18px", originY: "14px" } as React.CSSProperties}>
+          <ellipse cx="18" cy="9" rx="3.8" ry="5.5" fill={isToday ? "#F0C040" : "#E8A050"} opacity="0.6" />
+          <ellipse cx="18" cy="8" rx="2.5" ry="4.2" fill={isToday ? "#FFD060" : "#F0C060"} opacity="0.82" />
+          <ellipse cx="18" cy="7.5" rx="1.2" ry="2.6" fill="#FFFDE4" />
+          <ellipse cx="17.2" cy="7" rx="0.5" ry="1.1" fill="white" opacity="0.7" />
+        </motion.g>
+      </svg>
+    </div>
+  );
+}
 
 interface Message {
   id: string;
@@ -194,18 +249,9 @@ export default function BirthdayPage() {
           borderBottom: "1px solid var(--ivory-deep)",
           background: "linear-gradient(180deg, var(--ivory-dark) 0%, transparent 100%)",
         }}>
-          {/* 촛불 SVG — 메시지 있으면 breathe 애니메이션 */}
-          <div style={{ marginBottom: "1.25rem" }}>
-            <svg
-              className={hasMessages || isToday ? "candle-breathe" : ""}
-              width="32" height="32" viewBox="0 0 36 36" fill="none"
-              style={{ opacity: 0.75 }} aria-hidden="true"
-            >
-              <ellipse cx="18" cy="8" rx="4" ry="6" fill="#C4956A" opacity="0.5" />
-              <ellipse cx="18" cy="6" rx="2.5" ry="4.5" fill="#E8C4A0" opacity="0.8" />
-              <ellipse cx="18" cy="4.5" rx="1.2" ry="2.5" fill="#FFF5E0" />
-              <rect x="15" y="14" width="6" height="16" rx="1" fill="#D4A878" opacity="0.6" />
-            </svg>
+          {/* 디지털 촛불 — 메시지 개수에 따라 강도 증가 */}
+          <div style={{ marginBottom: "1.25rem", display: "flex", justifyContent: "center" }}>
+            <BirthdayCandle messageCount={record.messages.length} isToday={isToday} />
           </div>
 
           {/* D-day 배지 */}
