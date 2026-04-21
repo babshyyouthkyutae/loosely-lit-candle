@@ -1,21 +1,21 @@
 import type { Metadata } from "next";
-import { Noto_Serif_KR } from "next/font/google";
+import { Nanum_Myeongjo } from "next/font/google";
 import "./globals.css";
 
-const notoSerifKR = Noto_Serif_KR({
-  weight: ["300", "400", "500", "700"],
+const nanumMyeongjo = Nanum_Myeongjo({
+  weight: ["400", "700", "800"],
   subsets: ["latin"],
-  variable: "--font-noto-serif-kr",
+  variable: "--font-nanum-myeongjo",
   display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "느슨한 촛불 — 당신의 생일을 기억하는 사람들",
+  title: "느슨한 촛불 — 멀리서 켜둔 마음 하나",
   description:
     "은둔하고 고립된 청년들을 위한 디지털 롤링페이퍼. 당신의 생일을 입력하면, 마음을 담은 메시지들이 조용히 쌓여갑니다.",
-  keywords: ["롤링페이퍼", "생일", "은둔고립", "청년", "따뜻한 메시지"],
+  keywords: ["롤링페이퍼", "생일", "은둔고립", "청년", "따뜻한 메시지", "느슨한 촛불"],
   openGraph: {
-    title: "느슨한 촛불 — 당신의 생일을 기억하는 사람들",
+    title: "느슨한 촛불 — 멀리서 켜둔 마음 하나",
     description: "조용한 불꽃처럼, 당신 곁에 있겠습니다.",
     type: "website",
   },
@@ -28,7 +28,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ko">
-      <body className={`${notoSerifKR.variable}`}>
+      <body className={`${nanumMyeongjo.variable}`}>
         {/* Ambient candle glow elements */}
         <div
           className="glow-dot"

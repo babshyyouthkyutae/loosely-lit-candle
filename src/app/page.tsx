@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
 
 export default function HomePage() {
   const router = useRouter();
@@ -67,6 +68,7 @@ export default function HomePage() {
       >
         {/* 촛불 아이콘 */}
         <svg
+          className="candle-breathe"
           width="36"
           height="36"
           viewBox="0 0 36 36"
@@ -93,6 +95,22 @@ export default function HomePage() {
         >
           느슨한 촛불
         </p>
+
+        {/* 슬로건 — 1.5초 Framer Motion fadeIn */}
+        <motion.p
+          className="slogan"
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 1.5, ease: "easeOut", delay: 0.3 }}
+          style={{
+            fontSize: "0.8rem",
+            color: "var(--text-muted)",
+            fontWeight: 400,
+            marginTop: "0.25rem",
+          }}
+        >
+          멀리서 켜둔 마음 하나
+        </motion.p>
       </div>
 
       {/* 메인 카드 */}

@@ -1,5 +1,6 @@
 @import "tailwindcss";
 
+/* ─── 라이트 테마 (아이보리) ─────────────────────────── */
 :root {
   --ivory: #F8F4ED;
   --ivory-dark: #EFE8D8;
@@ -12,6 +13,26 @@
   --accent-warm: #D4A878;
   --border: #D6CCB8;
   --shadow: rgba(44, 36, 22, 0.08);
+  --card-bg: rgba(255, 252, 245, 0.9);
+  --font-main: var(--font-nanum-myeongjo), 'Nanum Myeongjo', 'Georgia', serif;
+}
+
+/* ─── 딥 웜 다크 모드 ────────────────────────────────── */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --ivory: #1C1812;
+    --ivory-dark: #241F18;
+    --ivory-deep: #2E271E;
+    --text-primary: #EDE3D0;
+    --text-secondary: #A89272;
+    --text-muted: #6E5E48;
+    --accent: #D4A878;
+    --accent-light: #8C6840;
+    --accent-warm: #C4956A;
+    --border: #3A3026;
+    --shadow: rgba(0, 0, 0, 0.35);
+    --card-bg: rgba(30, 24, 16, 0.92);
+  }
 }
 
 * {
@@ -27,13 +48,14 @@ html {
 body {
   background-color: var(--ivory);
   color: var(--text-primary);
-  font-family: 'Noto Serif KR', 'Georgia', serif;
+  font-family: var(--font-main);
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.4s ease, color 0.4s ease;
 }
 
-/* 미세한 종이 질감 배경 */
+/* ─── 종이 질감 배경 ─────────────────────────────────── */
 body::before {
   content: '';
   position: fixed;
@@ -44,7 +66,7 @@ body::before {
   z-index: 0;
 }
 
-/* Candlelight glow effect */
+/* ─── Candlelight glow ───────────────────────────────── */
 .glow-dot {
   position: fixed;
   width: 300px;
@@ -68,26 +90,39 @@ body::before {
   66% { transform: translate(-20px, 15px) scale(0.97); }
 }
 
-/* Fade in animation */
+/* ─── 슬로건 스타일 ──────────────────────────────────── */
+.slogan {
+  letter-spacing: 0.35em;
+  font-weight: 400;
+  line-height: 2;
+}
+
+/* ─── 촛불 호흡 애니메이션 ───────────────────────────── */
+@keyframes candle-breathe {
+  0%, 100% { transform: scale(1) translateY(0); filter: brightness(1); }
+  30%  { transform: scale(1.04) translateY(-1px); filter: brightness(1.08); }
+  60%  { transform: scale(0.97) translateY(1px); filter: brightness(0.94); }
+}
+
+.candle-breathe {
+  animation: candle-breathe 3s ease-in-out infinite;
+  transform-origin: bottom center;
+}
+
+/* ─── 진입 애니메이션 ───────────────────────────────── */
 @keyframes fade-in-up {
-  from {
-    opacity: 0;
-    transform: translateY(24px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes fade-in {
   from { opacity: 0; }
-  to { opacity: 1; }
+  to   { opacity: 1; }
 }
 
-@keyframes shimmer {
-  0% { background-position: -200% center; }
-  100% { background-position: 200% center; }
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
 }
 
 .animate-fade-in-up {
@@ -104,7 +139,7 @@ body::before {
 .delay-500 { animation-delay: 0.5s; opacity: 0; }
 .delay-700 { animation-delay: 0.7s; opacity: 0; }
 
-/* Custom input styling */
+/* ─── 입력 요소 ─────────────────────────────────────── */
 input[type="date"]::-webkit-calendar-picker-indicator {
   opacity: 0.4;
   cursor: pointer;
@@ -116,7 +151,7 @@ input[type="date"]::-webkit-outer-spin-button {
   display: none;
 }
 
-/* Underline animation for links */
+/* ─── 링크 언더라인 ──────────────────────────────────── */
 .link-underline {
   position: relative;
   text-decoration: none;
@@ -135,4 +170,29 @@ input[type="date"]::-webkit-outer-spin-button {
 
 .link-underline:hover::after {
   width: 100%;
+}
+
+/* ─── 윤슬 필터 팝업 오버레이 ─────────────────────────── */
+.yoonseul-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(44, 36, 22, 0.55);
+  backdrop-filter: blur(4px);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  animation: fade-in 0.25s ease forwards;
+}
+
+.yoonseul-modal {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 2.5rem 2rem;
+  max-width: 440px;
+  width: 100%;
+  box-shadow: 0 8px 48px var(--shadow);
+  animation: fade-in-up 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
