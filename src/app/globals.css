@@ -196,3 +196,76 @@ input[type="date"]::-webkit-outer-spin-button {
   box-shadow: 0 8px 48px var(--shadow);
   animation: fade-in-up 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
+
+/* ─── 케이크 캔버스 ──────────────────────────────────────── */
+.cake-canvas {
+  position: relative;
+  width: 340px;
+  height: 340px;
+  margin: 0 auto;
+}
+
+.cake-plate {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 38% 35%,
+    rgba(255,248,230,0.14) 0%,
+    rgba(212,168,120,0.06) 60%,
+    transparent 100%);
+  border: 1px solid rgba(212,168,120,0.2);
+  box-shadow: 0 0 40px rgba(212,168,120,0.08), inset 0 0 20px rgba(255,248,230,0.04);
+}
+
+/* ─── 조각 선택기 ─────────────────────────────────────────── */
+.piece-selector {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.piece-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 10px;
+  border: 1.5px solid var(--border);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: transparent;
+  font-family: var(--font-main);
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  min-width: 64px;
+}
+
+.piece-option:hover {
+  border-color: var(--accent-light);
+  color: var(--accent);
+  transform: translateY(-2px);
+}
+
+.piece-option.selected {
+  border-color: var(--accent);
+  background: rgba(196,149,106,0.1);
+  color: var(--accent);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(196,149,106,0.18);
+}
+
+/* ─── 자석 도착 문구 ──────────────────────────────────────── */
+@keyframes arrive-text {
+  0%   { opacity: 0; transform: translateY(10px) scale(0.95); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.arrive-text {
+  animation: arrive-text 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+

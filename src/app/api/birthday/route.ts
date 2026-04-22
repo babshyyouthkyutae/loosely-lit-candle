@@ -55,7 +55,7 @@ export async function GET(request: Request) {
   // 3. 생일 당일 → 메시지 전체 조회
   const { data: messages, error: msgError } = await supabase
     .from("messages")
-    .select("id, content, author, created_at")
+    .select("id, content, author, piece_type, pos_x, pos_y, created_at")
     .eq("birthday_id", id)
     .order("created_at", { ascending: true });
 

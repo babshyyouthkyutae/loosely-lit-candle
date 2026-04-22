@@ -1,70 +1,37 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { motion, useAnimation } from "framer-motion";
+import { motion, AnimatePresence, useAnimation } from "framer-motion";
+import { PIECE_META, type PieceType } from "@/lib/supabase";
 
-// ─── 디지털 촛불 (birthday 페이지용) ──────────────────────
-function BirthdayCandle({ messageCount = 0, isToday = false }: { messageCount?: number; isToday?: boolean }) {
-  const flameCtrl = useAnimation();
-  const glowCtrl = useAnimation();
-
-  // 메시지 개수에 따른 강도 계산 (1~10 → 0.0~1.0 범위)
-  const intensity = Math.min(messageCount / 10, 1);
-  // 기본 호흡 속도: 메시지 많을수록 더 빠르게 일렁임
-  const duration = 3.2 - intensity * 1.2; // 3.2s → 2.0s
-  const scaleMax = 1.08 + intensity * 0.1; // 1.08 → 1.18
-
-  useEffect(() => {
-    flameCtrl.start({
-      scaleX: [1, scaleMax, 0.93, scaleMax * 0.97, 0.97, 1],
-      scaleY: [1, 0.97, 1.06 + intensity * 0.06, 0.95, 1.03, 1],
-      y: [0, -(1.5 + intensity * 2), 0.5, -1, 0, 0],
-      opacity: [0.85, 0.9 + intensity * 0.1, 0.78, 0.92, 0.88, 0.85],
-      transition: { duration, repeat: Infinity, ease: "easeInOut" },
-    });
-    glowCtrl.start({
-      opacity: [0.35 + intensity * 0.2, 0.55 + intensity * 0.25, 0.35, 0.5 + intensity * 0.15, 0.38],
-      scale: [1, 1.06 + intensity * 0.12, 0.96, 1.04, 1],
-      transition: { duration, repeat: Infinity, ease: "easeInOut" },
-    });
-  }, [flameCtrl, glowCtrl, duration, scaleMax, intensity]);
-
-  return (
-    <div style={{ position: "relative", width: 36, height: 44, display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
-      {/* glow */}
-      <motion.div
-        animate={glowCtrl}
-        style={{
-          position: "absolute", top: -4, left: "50%", transform: "translateX(-50%)",
-          width: isToday ? 72 : 52, height: isToday ? 72 : 52,
-          borderRadius: "50%",
-          background: isToday
-            ? "radial-gradient(circle, rgba(255,200,80,0.35) 0%, rgba(212,168,120,0.15) 50%, transparent 70%)"
-            : "radial-gradient(circle, rgba(212,168,120,0.22) 0%, rgba(196,149,106,0.08) 50%, transparent 70%)",
-          pointerEvents: "none",
-        }}
-      />
-      <svg width="36" height="36" viewBox="0 0 36 36" fill="none" style={{ position: "relative", zIndex: 1 }} aria-hidden="true">
-        <rect x="14.5" y="16" width="7" height="17" rx="1.5" fill="#D4A878" opacity="0.55" />
-        <rect x="17.3" y="13.5" width="1.4" height="3.5" rx="0.5" fill="#8C6040" opacity="0.7" />
-        <motion.g animate={flameCtrl} style={{ originX: "18px", originY: "14px" } as React.CSSProperties}>
-          <ellipse cx="18" cy="9" rx="3.8" ry="5.5" fill={isToday ? "#F0C040" : "#E8A050"} opacity="0.6" />
-          <ellipse cx="18" cy="8" rx="2.5" ry="4.2" fill={isToday ? "#FFD060" : "#F0C060"} opacity="0.82" />
-          <ellipse cx="18" cy="7.5" rx="1.2" ry="2.6" fill="#FFFDE4" />
-          <ellipse cx="17.2" cy="7" rx="0.5" ry="1.1" fill="white" opacity="0.7" />
-        </motion.g>
-      </svg>
-    </div>
-  );
-}
-
-interface Message {
+// ─── 타입 ────────────────────────────────────────────────
+interface Piece {
   id: string;
   content: string;
   author: string;
+  piece_type: PieceType;
+  pos_x: number;
+  pos_y: number;
   created_at: string;
+}
+
+type SystemPiece = {
+  id: string;
+  content: string;
+  author: string;
+  piece_type: PieceType;
+  pos_x: number;
+  pos_y: number;
+  created_at: string;
+  isSystem: true;
+};
+
+type DisplayPiece = Piece | SystemPiece;
+
+function isSystemPiece(p: DisplayPiece): p is SystemPiece {
+  return "isSystem" in p;
 }
 
 interface BirthdayRecord {
@@ -72,85 +39,174 @@ interface BirthdayRecord {
   name: string;
   birthday: string;
   created_at: string;
-  messages: Message[];
-  locked: boolean;           // 서버 사이드 생일 당일 체크 결과
-  lockedReason?: string;     // 잠금 이유 ("birthday_not_today" 등)
+  messages: Piece[];
+  locked: boolean;
+  lockedReason?: string;
 }
 
-// ─── 날짜 유틸 ─────────────────────────────────────────
-function formatBirthday(dateStr: string) {
-  const date = new Date(dateStr);
-  return date.toLocaleDateString("ko-KR", { year: "numeric", month: "long", day: "numeric" });
-}
-
-function getDdayInfo(birthday: string): { text: string; daysLeft: number; isToday: boolean } {
+// ─── 날짜 유틸 ───────────────────────────────────────────
+function getDdayInfo(birthday: string) {
   const today = new Date();
   const bday = new Date(birthday);
-  const thisYearBday = new Date(today.getFullYear(), bday.getMonth(), bday.getDate());
-
-  // KST 기준 오늘 날짜와 비교
   const todayKST = new Date(today.toLocaleString("en-US", { timeZone: "Asia/Seoul" }));
-  const todayMonth = todayKST.getMonth();
-  const todayDay = todayKST.getDate();
-  const isToday = bday.getMonth() === todayMonth && bday.getDate() === todayDay;
-
-  if (thisYearBday < today && !isToday) {
-    thisYearBday.setFullYear(today.getFullYear() + 1);
-  }
-
-  const diffMs = thisYearBday.getTime() - today.getTime();
-  const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
-
+  const isToday =
+    bday.getMonth() === todayKST.getMonth() &&
+    bday.getDate() === todayKST.getDate();
+  const thisYearBday = new Date(today.getFullYear(), bday.getMonth(), bday.getDate());
+  if (thisYearBday < today && !isToday) thisYearBday.setFullYear(today.getFullYear() + 1);
+  const diffDays = Math.ceil((thisYearBday.getTime() - today.getTime()) / 86400000);
   if (isToday) return { text: "오늘이 생일이에요 🎂", daysLeft: 0, isToday: true };
   if (diffDays === 1) return { text: "내일이 생일이에요", daysLeft: 1, isToday: false };
   return { text: `생일까지 D-${diffDays}`, daysLeft: diffDays, isToday: false };
 }
 
-function formatRelativeDate(dateStr: string): string {
-  const date = new Date(dateStr);
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffMins = Math.floor(diffMs / 60000);
-  const diffHours = Math.floor(diffMins / 60);
-  const diffDays = Math.floor(diffHours / 24);
-
-  if (diffMins < 1) return "방금 전";
-  if (diffMins < 60) return `${diffMins}분 전`;
-  if (diffHours < 24) return `${diffHours}시간 전`;
-  if (diffDays < 7) return `${diffDays}일 전`;
-  return date.toLocaleDateString("ko-KR", { month: "long", day: "numeric" });
+// ─── 조각 SVG 케이크 슬라이스 ────────────────────────────
+function CakeSliceSVG({ pieceType, size = 80 }: { pieceType: PieceType; size?: number }) {
+  const meta = PIECE_META[pieceType];
+  const h = size;
+  const w = size * 0.85;
+  // 상단 둥근 삼각형 (케이크 조각 실루엣)
+  return (
+    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} fill="none" style={{ display: "block" }}>
+      {/* 케이크 바디 */}
+      <path
+        d={`M${w / 2} 0 L${w} ${h * 0.65} Q${w} ${h} ${w * 0.8} ${h} L${w * 0.2} ${h} Q0 ${h} 0 ${h * 0.65} Z`}
+        fill={meta.bg}
+        stroke={meta.border}
+        strokeWidth="1.2"
+      />
+      {/* 크림 레이어 */}
+      <ellipse cx={w / 2} cy={h * 0.05} rx={w * 0.38} ry={h * 0.1}
+        fill={meta.creamColor} opacity="0.9" />
+      {/* 상단 토핑 영역 */}
+      <path
+        d={`M${w * 0.15} ${h * 0.25} Q${w / 2} ${h * 0.08} ${w * 0.85} ${h * 0.25}`}
+        stroke={meta.border} strokeWidth="1" opacity="0.4" fill="none" />
+      {/* 옆면 레이어 선 */}
+      <line x1={w * 0.04} y1={h * 0.52} x2={w * 0.96} y2={h * 0.52}
+        stroke={meta.border} strokeWidth="0.8" opacity="0.3" />
+    </svg>
+  );
 }
 
-// ─── Zero-Data 기본 환영 메시지 ─────────────────────────
-type SystemMessage = {
-  id: string;
-  content: string;
-  author: string;
-  created_at: string;
-  isSystem: true;
-};
-
-type DisplayMessage = Message | SystemMessage;
-
-function isSystemMsg(msg: DisplayMessage): msg is SystemMessage {
-  return "isSystem" in msg && (msg as SystemMessage).isSystem === true;
+// ─── 조각 카드 ───────────────────────────────────────────
+interface PieceCardProps {
+  piece: DisplayPiece;
+  index: number;
+  total: number;
+  animate?: boolean;
+  isExpanded: boolean;
+  onClick: () => void;
 }
 
-const SYSTEM_WELCOME_MESSAGE: SystemMessage = {
-  id: "system-welcome",
-  content:
-    "오늘, 당신의 생일을 축하해요.\n\n"
-    + "혼자인 것 같아도, 누군가는 조용히 당신의 날을\n"
-    + "기억하고 있어요. 이 촛불은 오늘 당신만을\n"
-    + "위해 켜져 있어요. 불꽃이 흔들리는 동안\n"
-    + "잘 요온 것 같아요. 부디 오늘 하루, 온전히 당신이었으면 좋겠어요. 🕯️",
-  author: "느슨한 촛불",
-  created_at: new Date().toISOString(),
-  isSystem: true,
-};
+function PieceCard({ piece, index, total, animate = true, isExpanded, onClick }: PieceCardProps) {
+  const meta = PIECE_META[piece.piece_type ?? "cream"];
+  const canvasSize = 340;
+  const radius = 128;
+  const angle = (index / Math.max(total, 1)) * 2 * Math.PI - Math.PI / 2;
+  const cx = canvasSize / 2 + radius * Math.cos(angle) - 55;
+  const cy = canvasSize / 2 + radius * Math.sin(angle) - 55;
 
+  // 자석 효과: 초기 위치를 캔버스 밖으로 흩뿌림
+  const spreadAngle = angle + (Math.random() - 0.5) * 0.8;
+  const spreadR = 280 + Math.random() * 100;
+  const initX = canvasSize / 2 + spreadR * Math.cos(spreadAngle) - 55;
+  const initY = canvasSize / 2 + spreadR * Math.sin(spreadAngle) - 55;
 
-// ─── 메인 컴포넌트 ──────────────────────────────────────
+  const isSystem = isSystemPiece(piece);
+
+  return (
+    <motion.div
+      initial={animate ? { x: initX, y: initY, opacity: 0, scale: 0.6, rotate: (Math.random() - 0.5) * 60 } : false}
+      animate={{ x: cx, y: cy, opacity: 1, scale: isExpanded ? 1.12 : 1, rotate: 0 }}
+      transition={{
+        delay: animate ? index * 0.12 + 0.3 : 0,
+        duration: animate ? 0.9 : 0.25,
+        ease: [0.22, 1, 0.36, 1],
+        scale: { duration: 0.25 },
+      }}
+      onClick={onClick}
+      style={{
+        position: "absolute",
+        width: 110,
+        cursor: "pointer",
+        zIndex: isExpanded ? 20 : 2,
+      }}
+      whileHover={{ scale: 1.08, zIndex: 15 }}
+    >
+      {/* 케이크 슬라이스 상단 */}
+      <div style={{
+        width: "100%",
+        borderRadius: "10px 10px 0 0",
+        overflow: "hidden",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "flex-end",
+        paddingTop: 4,
+        background: `linear-gradient(180deg, ${meta.topColor} 0%, ${meta.bg} 100%)`,
+        border: `1px solid ${meta.border}`,
+        borderBottom: "none",
+      }}>
+        <CakeSliceSVG pieceType={piece.piece_type ?? "cream"} size={64} />
+      </div>
+
+      {/* 텍스트 바디 */}
+      <div style={{
+        background: meta.bg,
+        border: `1px solid ${meta.border}`,
+        borderTop: "none",
+        borderRadius: "0 0 10px 10px",
+        padding: "0.5rem 0.6rem 0.6rem",
+        boxShadow: isSystem
+          ? `0 4px 16px rgba(196,149,106,0.3)`
+          : `0 4px 12px rgba(0,0,0,0.2)`,
+      }}>
+        <p style={{
+          fontSize: "0.68rem",
+          lineHeight: 1.55,
+          color: pieceType_textColor(piece.piece_type),
+          fontWeight: 300,
+          display: "-webkit-box",
+          WebkitLineClamp: isExpanded ? 99 : 3,
+          WebkitBoxOrient: "vertical",
+          overflow: "hidden",
+          whiteSpace: "pre-line",
+          marginBottom: "0.3rem",
+        }}>
+          {piece.content}
+        </p>
+        <p style={{
+          fontSize: "0.58rem",
+          opacity: 0.55,
+          letterSpacing: "0.04em",
+          color: pieceType_textColor(piece.piece_type),
+        }}>
+          {isSystem ? "🕯️ 느슨한 촛불" : `— ${piece.author}`}
+        </p>
+      </div>
+    </motion.div>
+  );
+}
+
+function pieceType_textColor(pt: PieceType): string {
+  return pt === "choco" ? "#F5EAD5" : "#2C2416";
+}
+
+// ─── Zero-Data 시스템 조각 ──────────────────────────────
+function makeSystemPiece(name: string): SystemPiece {
+  return {
+    id: "system-welcome",
+    content: `오늘, ${name}님의 생일을 축하해요.\n\n혼자인 것 같아도, 누군가는 조용히 당신의 날을 기억하고 있어요.\n이 첫 번째 조각은 느슨한 촛불이 보내는 마음이에요. 🕯️`,
+    author: "느슨한 촛불",
+    piece_type: "cream",
+    pos_x: 0.5,
+    pos_y: 0.5,
+    created_at: new Date().toISOString(),
+    isSystem: true,
+  };
+}
+
+// ─── 메인 컴포넌트 ───────────────────────────────────────
 export default function BirthdayPage() {
   const params = useParams();
   const router = useRouter();
@@ -160,366 +216,246 @@ export default function BirthdayPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [arriveShown, setArriveShown] = useState(false);
 
   useEffect(() => {
     if (!id) return;
     fetch(`/api/birthday?id=${id}`)
-      .then((res) => {
-        if (res.status === 404) { setNotFound(true); return null; }
-        return res.json();
-      })
-      .then((data) => {
-        if (data) setRecord(data);
-        setIsLoading(false);
-      })
+      .then((res) => { if (res.status === 404) { setNotFound(true); return null; } return res.json(); })
+      .then((data) => { if (data) setRecord(data); setIsLoading(false); })
       .catch(() => { setNotFound(true); setIsLoading(false); });
   }, [id]);
 
+  // 자석 효과 완료 후 도착 문구 표시
+  useEffect(() => {
+    if (!record || record.locked) return;
+    const count = record.messages.length;
+    const delay = count * 120 + 1200;
+    const t = setTimeout(() => setArriveShown(true), delay);
+    return () => clearTimeout(t);
+  }, [record]);
+
   const handleCopyLink = async () => {
-    try {
-      await navigator.clipboard.writeText(window.location.href);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2500);
-    } catch { /* fallback */ }
+    try { await navigator.clipboard.writeText(window.location.href); setCopied(true); setTimeout(() => setCopied(false), 2500); }
+    catch { /* fallback */ }
   };
 
-  // ─── 로딩 ──────────────────────────────────────────────
   if (isLoading) {
     return (
-      <main style={centeredStyle}>
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "1rem", opacity: 0.6 }}>
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--text-muted)" strokeWidth="1.5"
-            style={{ animation: "spin 1.5s linear infinite" }} aria-label="로딩 중">
-            <circle cx="12" cy="12" r="10" strokeOpacity="0.2" />
-            <path d="M12 2a10 10 0 0 1 10 10" />
-          </svg>
-          <p style={{ fontSize: "0.8125rem", color: "var(--text-muted)", fontWeight: 300 }}>불러오는 중…</p>
-        </div>
-        <style>{`@keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }`}</style>
+      <main style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: [0, 0.6, 0.4, 0.7, 0.5] }} transition={{ duration: 2, repeat: Infinity }}>
+          <p style={{ fontSize: "0.8rem", color: "var(--text-muted)", letterSpacing: "0.15em" }}>조각을 불러오는 중…</p>
+        </motion.div>
+        <style>{`@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`}</style>
       </main>
     );
   }
 
-  // ─── 404 ───────────────────────────────────────────────
   if (notFound || !record) {
     return (
-      <main style={{ ...centeredStyle, flexDirection: "column", padding: "2rem" }}>
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} style={{ textAlign: "center", maxWidth: "360px" }}>
+      <main style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} style={{ textAlign: "center", maxWidth: 360 }}>
           <p style={{ fontSize: "2rem", marginBottom: "1rem", opacity: 0.4 }}>∅</p>
-          <h1 style={{ fontSize: "1.125rem", fontWeight: 400, color: "var(--text-primary)", marginBottom: "0.75rem" }}>
-            페이지를 찾을 수 없어요
-          </h1>
-          <p style={{ fontSize: "0.875rem", color: "var(--text-secondary)", marginBottom: "2rem", lineHeight: 1.8, fontWeight: 300 }}>
-            링크가 잘못되었거나 삭제된 롤링페이퍼예요.
-          </p>
-          <Link href="/" className="link-underline" style={{ fontSize: "0.8125rem", color: "var(--accent)", letterSpacing: "0.05em" }}>
-            처음으로 돌아가기
-          </Link>
+          <h1 style={{ fontSize: "1.125rem", fontWeight: 400, color: "var(--text-primary)", marginBottom: "0.75rem" }}>케이크를 찾을 수 없어요</h1>
+          <p style={{ fontSize: "0.875rem", color: "var(--text-secondary)", marginBottom: "2rem", lineHeight: 1.8, fontWeight: 300 }}>링크가 잘못되었거나 삭제된 케이크예요.</p>
+          <Link href="/" style={{ fontSize: "0.8125rem", color: "var(--accent)" }}>처음으로 돌아가기</Link>
         </motion.div>
       </main>
     );
   }
 
   const { text: ddayText, daysLeft, isToday } = getDdayInfo(record.birthday);
-  const hasMessages = record.messages.length > 0;
-
-  // 메시지 잠금 여부 → 서버 사이드 locked 플래그를 신뢰 (단일 진실 공급원)
-  // locked=true면 서버가 이미 messages:[] 반환했으므로 클라이언트 날짜 계산 불필요
   const messagesLocked = record.locked;
-
-  // Zero-Data: 생일 당일이고 메시지 없으면 시스템 메시지 표시
-  const displayMessages: DisplayMessage[] = !messagesLocked && !hasMessages
-    ? [SYSTEM_WELCOME_MESSAGE]
-    : !messagesLocked
-    ? record.messages
+  const rawPieces: Piece[] = record.messages;
+  const displayPieces: DisplayPiece[] = !messagesLocked
+    ? rawPieces.length === 0 ? [makeSystemPiece(record.name)] : rawPieces
     : [];
 
   return (
     <main style={{
       minHeight: "100vh", display: "flex", flexDirection: "column",
-      alignItems: "center", padding: "3rem 1.5rem", position: "relative", zIndex: 1,
+      alignItems: "center", padding: "2.5rem 1.5rem 4rem", position: "relative", zIndex: 1,
     }}>
       {/* 뒤로가기 */}
-      <nav className="animate-fade-in" style={{ width: "100%", maxWidth: "560px", marginBottom: "2.5rem" }}>
-        <Link href="/" className="link-underline" style={{
+      <nav style={{ width: "100%", maxWidth: 600, marginBottom: "2rem" }}>
+        <Link href="/" style={{
           fontSize: "0.75rem", color: "var(--text-muted)", letterSpacing: "0.1em",
           textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "0.375rem",
         }}>
-          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
-            <path d="M8 2L4 6l4 4" />
-          </svg>
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M8 2L4 6l4 4" /></svg>
           처음으로
         </Link>
       </nav>
 
-      {/* 메인 카드 */}
+      {/* 헤더 */}
       <motion.div
-        initial={{ opacity: 0, y: 24 }}
+        initial={{ opacity: 0, y: -12 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.7, ease: "easeOut" }}
-        style={{
-          width: "100%", maxWidth: "560px",
-          background: "var(--card-bg)",
-          backdropFilter: "blur(12px)",
-          border: "1px solid var(--border)",
-          borderRadius: "2px", overflow: "hidden",
-          boxShadow: "0 4px 40px var(--shadow)",
-        }}
+        transition={{ duration: 0.6 }}
+        style={{ textAlign: "center", marginBottom: "2rem", maxWidth: 600 }}
       >
-        {/* 헤더 영역 */}
+        {/* D-day 배지 */}
         <div style={{
-          padding: "2.5rem", textAlign: "center",
-          borderBottom: "1px solid var(--ivory-deep)",
-          background: "linear-gradient(180deg, var(--ivory-dark) 0%, transparent 100%)",
+          display: "inline-block", padding: "0.25rem 0.875rem",
+          border: "1px solid var(--accent-light)", borderRadius: 999,
+          fontSize: "0.7rem", letterSpacing: "0.1em", color: "var(--accent)",
+          marginBottom: "0.875rem", background: "rgba(196,149,106,0.06)",
         }}>
-          {/* 디지털 촛불 — 메시지 개수에 따라 강도 증가 */}
-          <div style={{ marginBottom: "1.25rem", display: "flex", justifyContent: "center" }}>
-            <BirthdayCandle messageCount={record.messages.length} isToday={isToday} />
-          </div>
-
-          {/* D-day 배지 */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.3, duration: 0.5 }}
-            style={{
-              display: "inline-block", padding: "0.3rem 0.875rem",
-              border: "1px solid var(--accent-light)", borderRadius: "999px",
-              fontSize: "0.7rem", letterSpacing: "0.1em", color: "var(--accent)",
-              marginBottom: "1.25rem", background: "rgba(196, 149, 106, 0.06)",
-            }}
-          >
-            {ddayText}
-          </motion.div>
-
-          <h1 style={{ fontSize: "1.5rem", fontWeight: 400, color: "var(--text-primary)", marginBottom: "0.5rem", lineHeight: 1.4 }}>
-            {record.name}님의<br />롤링페이퍼
-          </h1>
-          <p style={{ fontSize: "0.875rem", color: "var(--text-secondary)", fontWeight: 300 }}>
-            {formatBirthday(record.birthday)}
-          </p>
+          {ddayText}
         </div>
-
-        {/* 메시지 영역 헤더 */}
-        <div style={{ padding: "1.25rem 2.5rem 0", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <span style={{ fontSize: "0.7rem", letterSpacing: "0.15em", color: "var(--text-muted)", textTransform: "uppercase" }}>
-            메시지 {isToday && hasMessages && (
-              <span style={{
-                display: "inline-flex", alignItems: "center", justifyContent: "center",
-                width: "18px", height: "18px", background: "var(--accent)", color: "var(--ivory)",
-                borderRadius: "999px", fontSize: "0.6rem", marginLeft: "0.375rem", fontWeight: 500,
-              }}>
-                {record.messages.length}
-              </span>
-            )}
-          </span>
-        </div>
-
-        {/* 메시지 목록 */}
-        <div style={{ padding: "1.25rem 2.5rem 2rem" }}>
-
-          {/* ── 생일 당일 잠금 안내 ── */}
-          {messagesLocked && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.5 }}
-              style={{ textAlign: "center", padding: "2.5rem 1rem" }}
-            >
-              <div style={{
-                width: "56px", height: "56px",
-                border: "1.5px solid var(--accent-light)",
-                borderRadius: "50%", margin: "0 auto 1.25rem",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                background: "rgba(196, 149, 106, 0.05)",
-              }} aria-hidden="true">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="1.5">
-                  <path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                </svg>
-              </div>
-              <p style={{ fontSize: "0.9rem", color: "var(--text-secondary)", lineHeight: 1.9, fontWeight: 300 }}>
-                롤링페이퍼는 <strong style={{ color: "var(--accent)", fontWeight: 400 }}>생일 당일</strong>에 열려요.
-                <br />
-                <span style={{ fontSize: "0.8rem", opacity: 0.75 }}>
-                  {daysLeft > 0
-                    ? `D-${daysLeft} · 지금은 마음을 남겨두는 시간이에요.`
-                    : "잠시 후면 읽을 수 있어요."}
-                </span>
-              </p>
-            </motion.div>
-          )}
-
-          {/* ── 생일 당일: 메시지 표시 ── */}
-          {!messagesLocked && (
-            <ul style={{ listStyle: "none", display: "flex", flexDirection: "column", gap: "1rem" }}>
-              {displayMessages.map((msg, index) => (
-                <motion.li
-                  key={msg.id}
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.12 + 0.2, duration: 0.55, ease: "easeOut" }}
-                >
-                  {isSystemMsg(msg) ? (
-                    // ─── 시스템 환영 메시지 카드 (특별 디자인) ───
-                    <div style={{
-                      padding: "1.75rem 1.5rem",
-                      background: "linear-gradient(135deg, rgba(212,168,120,0.10) 0%, rgba(196,149,106,0.05) 100%)",
-                      border: "1px solid var(--accent-light)",
-                      borderRadius: "4px",
-                      position: "relative",
-                      overflow: "hidden",
-                    }}>
-                      {/* 장식 선 */}
-                      <div style={{
-                        position: "absolute", top: 0, left: 0, right: 0,
-                        height: "2px",
-                        background: "linear-gradient(90deg, transparent, var(--accent), transparent)",
-                        opacity: 0.5,
-                      }} />
-
-                      {/* 촛불 + '\ub290슨한 \ucd1b\ubd88' 표시 */}
-                      <div style={{
-                        display: "flex", alignItems: "center", gap: "0.5rem",
-                        marginBottom: "1rem",
-                      }}>
-                        <svg width="14" height="16" viewBox="0 0 36 36" fill="none" aria-hidden="true">
-                          <rect x="14.5" y="18" width="7" height="15" rx="1.5" fill="#D4A878" opacity="0.5" />
-                          <ellipse cx="18" cy="10" rx="3.5" ry="5" fill="#F0C060" opacity="0.7" />
-                          <ellipse cx="18" cy="9" rx="2" ry="3.5" fill="#FFFDE4" opacity="0.9" />
-                        </svg>
-                        <span style={{
-                          fontSize: "0.65rem", letterSpacing: "0.15em",
-                          color: "var(--accent)", textTransform: "uppercase", fontWeight: 400,
-                        }}>
-                          느슨한 촛불
-                        </span>
-                        <span style={{
-                          fontSize: "0.6rem", color: "var(--text-muted)",
-                          padding: "0.1rem 0.4rem",
-                          border: "1px solid var(--border)",
-                          borderRadius: "999px", letterSpacing: "0.05em",
-                        }}>
-                          첫 번째 촛불
-                        </span>
-                      </div>
-
-                      {/* 본문 */}
-                      <p style={{
-                        fontSize: "0.9rem",
-                        color: "var(--text-primary)",
-                        lineHeight: 2.0,
-                        fontWeight: 300,
-                        whiteSpace: "pre-line",
-                        marginBottom: "1rem",
-                      }}>
-                        {msg.content}
-                      </p>
-
-                      {/* 하단 시간 */}
-                      <p style={{
-                        fontSize: "0.65rem", color: "var(--accent)",
-                        opacity: 0.55, letterSpacing: "0.05em",
-                        textAlign: "right",
-                      }}>
-                        생일 당일 자동 등록
-                      </p>
-                    </div>
-                  ) : (
-                    // ─── 일반 메시지 카드 ───
-                    <div style={{
-                      padding: "1.25rem",
-                      background: "var(--ivory-dark)",
-                      border: "1px solid var(--border)",
-                      borderRadius: "2px",
-                    }}>
-                      <p style={{
-                        fontSize: "0.9rem", color: "var(--text-primary)",
-                        lineHeight: 1.9, fontWeight: 300, marginBottom: "0.75rem",
-                        whiteSpace: "pre-line",
-                      }}>
-                        {msg.content}
-                      </p>
-                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                        <p style={{ fontSize: "0.7rem", color: "var(--text-muted)", letterSpacing: "0.05em" }}>
-                          — {msg.author}
-                        </p>
-                        <p style={{ fontSize: "0.65rem", color: "var(--text-muted)", opacity: 0.7 }}>
-                          {formatRelativeDate(msg.created_at)}
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                </motion.li>
-              ))}
-            </ul>
-          )}
-        </div>
-
-        {/* 하단 액션 */}
-        <div style={{
-          padding: "1.5rem 2.5rem 2rem",
-          borderTop: "1px solid var(--ivory-deep)",
-          display: "flex", flexDirection: "column", gap: "0.75rem",
-        }}>
-          <button
-            id="write-message-btn"
-            onClick={() => router.push(`/birthday/${id}/write`)}
-            style={{
-              width: "100%", padding: "0.9375rem",
-              background: "var(--text-primary)", color: "var(--ivory)",
-              border: "none", borderRadius: "2px", fontSize: "0.875rem",
-              letterSpacing: "0.1em", cursor: "pointer", transition: "all 0.3s ease",
-              fontFamily: "inherit", fontWeight: 400,
-              display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem",
-            }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = "var(--accent)"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = "var(--text-primary)"; }}
-          >
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
-              <path d="M2 10V12h2l6-6-2-2L2 10z" /><path d="M9 3l2 2" />
-            </svg>
-            마음 전하기
-          </button>
-
-          <button
-            id="copy-link-btn" onClick={handleCopyLink}
-            style={{
-              width: "100%", padding: "0.875rem",
-              background: "transparent", border: "1px solid var(--border)",
-              borderRadius: "2px", fontSize: "0.8125rem",
-              color: copied ? "var(--accent)" : "var(--text-secondary)",
-              cursor: "pointer", transition: "all 0.3s ease",
-              fontFamily: "inherit", letterSpacing: "0.05em",
-              display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem",
-            }}
-            onMouseEnter={(e) => { if (!copied) { e.currentTarget.style.borderColor = "var(--accent-light)"; e.currentTarget.style.color = "var(--accent)"; }}}
-            onMouseLeave={(e) => { if (!copied) { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.color = "var(--text-secondary)"; }}}
-          >
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
-              {copied ? <path d="M2 7l3.5 3.5L12 3" /> : (<><rect x="4" y="4" width="8" height="8" rx="1" /><path d="M2 10V2h8" /></>)}
-            </svg>
-            {copied ? "링크가 복사되었어요" : "링크 복사하기"}
-          </button>
-
-          <p style={{ textAlign: "center", fontSize: "0.7rem", color: "var(--text-muted)", fontWeight: 300, lineHeight: 1.7 }}>
-            링크를 공유하면 누구나 마음을 전할 수 있어요
-          </p>
-        </div>
+        <h1 style={{ fontSize: "1.5rem", fontWeight: 400, color: "var(--text-primary)", lineHeight: 1.4 }}>
+          {record.name}님의 케이크
+        </h1>
+        <p style={{ fontSize: "0.8rem", color: "var(--text-secondary)", marginTop: "0.375rem", fontWeight: 300 }}>
+          당신의 조각이 모여 이 사람의 오늘이 완성됩니다.
+        </p>
       </motion.div>
 
-      <p className="animate-fade-in delay-700" style={{
-        marginTop: "2.5rem", fontSize: "0.7rem",
-        color: "var(--text-muted)", letterSpacing: "0.1em", opacity: 0.6,
-      }}>
-        느슨한 촛불
-      </p>
+      {/* ── 케이크 캔버스 (생일 당일) ── */}
+      {!messagesLocked && (
+        <div style={{ marginBottom: "2rem" }}>
+          {/* 도착 문구 */}
+          <AnimatePresence>
+            {arriveShown && rawPieces.length > 0 && (
+              <motion.p
+                key="arrive"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.8 }}
+                style={{
+                  textAlign: "center", fontSize: "0.78rem", color: "var(--accent)",
+                  letterSpacing: "0.08em", marginBottom: "1rem", fontWeight: 300,
+                }}
+              >
+                당신을 향한 마음 조각들이 도착했습니다
+              </motion.p>
+            )}
+          </AnimatePresence>
 
-      <style>{`@keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }`}</style>
+          {/* 캔버스 */}
+          <div className="cake-canvas">
+            {/* 빈 케이크 판 */}
+            <motion.div
+              className="cake-plate"
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ duration: 0.6, ease: "easeOut" }}
+            />
+
+            {/* 조각들 */}
+            {displayPieces.map((piece, i) => (
+              <PieceCard
+                key={piece.id}
+                piece={piece}
+                index={i}
+                total={displayPieces.length}
+                animate={true}
+                isExpanded={expandedId === piece.id}
+                onClick={() => setExpandedId(expandedId === piece.id ? null : piece.id)}
+              />
+            ))}
+          </div>
+
+          {/* 조각 수 안내 */}
+          <p style={{
+            textAlign: "center", fontSize: "0.7rem", color: "var(--text-muted)",
+            marginTop: "1rem", letterSpacing: "0.08em",
+          }}>
+            {rawPieces.length > 0
+              ? `${rawPieces.length}개의 조각이 모였어요`
+              : "아직 조각이 없어요 — 링크를 공유해보세요"}
+          </p>
+        </div>
+      )}
+
+      {/* ── 잠금 상태 ── */}
+      {messagesLocked && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.4 }}
+          style={{
+            width: "100%", maxWidth: 480,
+            background: "var(--card-bg)", border: "1px solid var(--border)",
+            borderRadius: 4, padding: "3rem 2rem", textAlign: "center",
+            marginBottom: "2rem",
+          }}
+        >
+          {/* 빈 케이크 판 미리보기 */}
+          <div style={{
+            width: 120, height: 120, borderRadius: "50%", margin: "0 auto 1.5rem",
+            border: "1px dashed var(--accent-light)",
+            background: "rgba(196,149,106,0.04)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}>
+            <span style={{ fontSize: "2rem", opacity: 0.4 }}>🎂</span>
+          </div>
+          <p style={{ fontSize: "0.9rem", color: "var(--text-secondary)", lineHeight: 1.9, fontWeight: 300 }}>
+            케이크는 <strong style={{ color: "var(--accent)", fontWeight: 400 }}>생일 당일</strong>에 열려요.
+            <br />
+            <span style={{ fontSize: "0.8rem", opacity: 0.75 }}>
+              {daysLeft > 0
+                ? `D-${daysLeft} · 지금은 조각을 모으는 시간이에요.`
+                : "잠시 후면 읽을 수 있어요."}
+            </span>
+          </p>
+        </motion.div>
+      )}
+
+      {/* ── 액션 버튼 ── */}
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.5, duration: 0.6 }}
+        style={{ width: "100%", maxWidth: 400, display: "flex", flexDirection: "column", gap: "0.75rem" }}
+      >
+        <button
+          id="write-piece-btn"
+          onClick={() => router.push(`/birthday/${id}/write`)}
+          style={{
+            width: "100%", padding: "0.9375rem",
+            background: "var(--text-primary)", color: "var(--ivory)",
+            border: "none", borderRadius: 2, fontSize: "0.875rem",
+            letterSpacing: "0.1em", cursor: "pointer", transition: "background 0.3s ease",
+            fontFamily: "inherit", fontWeight: 400,
+            display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem",
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = "var(--accent)"; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = "var(--text-primary)"; }}
+        >
+          <span style={{ fontSize: "1rem" }}>🍰</span>
+          마음 한 조각 보태기
+        </button>
+
+        <button
+          id="copy-link-btn"
+          onClick={handleCopyLink}
+          style={{
+            width: "100%", padding: "0.875rem",
+            background: "transparent", border: "1px solid var(--border)",
+            borderRadius: 2, fontSize: "0.8125rem",
+            color: copied ? "var(--accent)" : "var(--text-secondary)",
+            cursor: "pointer", transition: "all 0.3s ease",
+            fontFamily: "inherit", letterSpacing: "0.05em",
+            display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem",
+          }}
+          onMouseEnter={(e) => { if (!copied) { e.currentTarget.style.borderColor = "var(--accent-light)"; e.currentTarget.style.color = "var(--accent)"; }}}
+          onMouseLeave={(e) => { if (!copied) { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.color = "var(--text-secondary)"; }}}
+        >
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
+            {copied ? <path d="M2 7l3.5 3.5L12 3" /> : (<><rect x="4" y="4" width="8" height="8" rx="1" /><path d="M2 10V2h8" /></>)}
+          </svg>
+          {copied ? "링크가 복사되었어요" : "링크 복사하기"}
+        </button>
+
+        <p style={{ textAlign: "center", fontSize: "0.7rem", color: "var(--text-muted)", fontWeight: 300, lineHeight: 1.7 }}>
+          링크를 공유하면 누구나 조각을 보탤 수 있어요
+        </p>
+      </motion.div>
+
+      <style>{`@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`}</style>
     </main>
   );
 }
-
-const centeredStyle: React.CSSProperties = {
-  minHeight: "100vh", display: "flex", alignItems: "center",
-  justifyContent: "center", position: "relative", zIndex: 1,
-};

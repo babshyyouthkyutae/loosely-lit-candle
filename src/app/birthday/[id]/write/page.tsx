@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence, useAnimation } from "framer-motion";
+import { PIECE_META, type PieceType } from "@/lib/supabase";
 
 // ─── Write페이지용 촛불 미니 컴포넌트 ─────────────────────────────────
 function WriteCandle({ flicker = false }: { flicker?: boolean }) {
@@ -201,6 +202,7 @@ export default function WritePage() {
 
   const [content, setContent] = useState("");
   const [author, setAuthor] = useState("");
+  const [pieceType, setPieceType] = useState<PieceType>("cream");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isChecking, setIsChecking] = useState(false);
   const [error, setError] = useState("");
@@ -237,6 +239,7 @@ export default function WritePage() {
           birthdayId: id,
           content: finalContent,
           author: author.trim() || "익명",
+          pieceType,
         }),
       });
       if (!res.ok) {
@@ -252,7 +255,7 @@ export default function WritePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!content.trim()) { setError("마음을 담은 메시지를 써주세요."); return; }
+    if (!content.trim()) { setError("마음을 담은 조각 내용을 써주세요."); return; }
     if (content.trim().length > MAX_CHARS) { setError(`${MAX_CHARS}자 이내로 작성해주세요.`); return; }
 
     setIsChecking(true);
@@ -347,10 +350,10 @@ export default function WritePage() {
               <WriteCandle flicker={true} />
             </div>
             <h1 style={{ fontSize: "1.25rem", fontWeight: 400, color: "var(--text-primary)", marginBottom: "0.625rem" }}>
-              마음을 전달했어요
+              조각이 도착했어요 🍰
             </h1>
             <p style={{ fontSize: "0.875rem", color: "var(--text-secondary)", lineHeight: 1.8, fontWeight: 300 }}>
-              {record.name}님의 생일에 조용히<br />당신의 마음이 닿을 거예요.
+              {record.name}님의 케이크에 조용히<br />당신의 조각이 얹혔어요.
             </p>
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: "0.625rem" }}>
@@ -423,21 +426,43 @@ export default function WritePage() {
             </svg>
           </div>
           <h1 style={{ fontSize: "1.25rem", fontWeight: 400, color: "var(--text-primary)", lineHeight: 1.5, marginBottom: "0.5rem" }}>
-            {record.name}님께<br />마음을 전해요
+            {record.name}님의 케이크에<br />조각 하나 보태요
           </h1>
           <p style={{ fontSize: "0.8rem", color: "var(--text-muted)", fontWeight: 300 }}>
-            익명으로 남겨도 좋아요
+            익명으로 남겨도 좋아요 — 당신의 조각이 오늘을 완성합니다.
           </p>
         </div>
 
         <div style={{ width: "40px", height: "1px", background: "var(--border)", margin: "0 auto 2.5rem" }} aria-hidden="true" />
 
         <form onSubmit={handleSubmit} noValidate>
-          {/* 메시지 textarea */}
+          {/* ─ 조각 종류 선택기 ─ */}
+          <div style={{ marginBottom: "1.5rem" }}>
+            <label style={{ ...labelStyle, display: "block", marginBottom: "0.75rem" }}>
+              조각 종류 선택
+            </label>
+            <div className="piece-selector">
+              {(Object.keys(PIECE_META) as PieceType[]).map((pt) => (
+                <button
+                  key={pt}
+                  type="button"
+                  id={`piece-type-${pt}`}
+                  className={`piece-option${pieceType === pt ? " selected" : ""}`}
+                  onClick={() => setPieceType(pt)}
+                >
+                  <span className="piece-option-emoji">{PIECE_META[pt].emoji}</span>
+                  {PIECE_META[pt].label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* 조각 내용 textarea */}
           <div style={{ marginBottom: "1.25rem" }}>
             <label htmlFor="message-content" style={labelStyle}>
-              메시지 <span style={{ color: "var(--accent)" }}>*</span>
+              마음 조각 — <span style={{ color: "var(--accent)" }}>*</span>
             </label>
+
             <div style={{ position: "relative" }}>
               <textarea
                 id="message-content"
@@ -470,7 +495,7 @@ export default function WritePage() {
 
           {/* 작성자 이름 */}
           <div style={{ marginBottom: "2rem" }}>
-            <label htmlFor="message-author" style={labelStyle}>보내는 사람</label>
+            <label htmlFor="message-author" style={labelStyle}>조각을 보내는 사람</label>
             <input
               id="message-author" type="text" value={author}
               onChange={(e) => setAuthor(e.target.value)}
@@ -499,14 +524,12 @@ export default function WritePage() {
 
           {/* 제출 버튼 */}
           <button
-            id="submit-message-btn" type="submit"
+            id="submit-piece-btn" type="submit"
             disabled={isBusy || content.trim().length === 0}
             style={{
               ...primaryBtnStyle,
               opacity: content.trim().length === 0 ? 0.5 : 1,
               cursor: isBusy || content.trim().length === 0 ? "not-allowed" : "pointer",
-              background: isBusy ? "var(--ivory-deep)" : "var(--text-primary)",
-              color: isBusy ? "var(--text-muted)" : "var(--ivory)",
             }}
             onMouseEnter={(e) => { if (!isBusy && content.trim().length > 0) e.currentTarget.style.background = "var(--accent)"; }}
             onMouseLeave={(e) => { if (!isBusy) e.currentTarget.style.background = "var(--text-primary)"; }}
@@ -518,7 +541,7 @@ export default function WritePage() {
                   <circle cx="12" cy="12" r="10" strokeOpacity="0.3" />
                   <path d="M12 2a10 10 0 0 1 10 10" />
                 </svg>
-                마음을 다듬는 중…
+                조각을 다듬는 중…
               </span>
             ) : isSubmitting ? (
               <span style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem" }}>
@@ -529,7 +552,7 @@ export default function WritePage() {
                 </svg>
                 전달 중…
               </span>
-            ) : "마음 전하기"}
+            ) : `마음 한 조각 보태기 ${PIECE_META[pieceType].emoji}`}
           </button>
         </form>
       </motion.div>
@@ -538,9 +561,10 @@ export default function WritePage() {
         marginTop: "2rem", fontSize: "0.72rem", color: "var(--text-muted)",
         textAlign: "center", lineHeight: 1.7, fontWeight: 300,
       }}>
-        작성된 메시지는 수정·삭제가 어려워요.
+        작성된 조각은 수정·삭제가 어려워요.
         <br />천천히 마음을 다듬어 보내주세요.
       </p>
+
 
       <style>{`@keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }`}</style>
     </main>
