@@ -135,7 +135,12 @@ export default function HomePage() {
   const [preferences, setPreferences] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-  const [submitted, setSubmitted] = useState(false); // 제출 성공 트리거
+  const [submitted, setSubmitted] = useState(false);
+  const [showAbout, setShowAbout] = useState(false);
+
+  // 쉴 카테고리 키워드 감지 (무드라이트 트리거용)
+  const REST_KEYWORDS = ["조용한 휴식", "혼자만의 시간", "느린 걸음"];
+  const hasRestKeyword = preferences.some(p => REST_KEYWORDS.includes(p));
 
   const togglePref = (kw: string) => {
     setPreferences(prev =>
@@ -281,6 +286,26 @@ export default function HomePage() {
             <br />
             당신의 오늘을 완성합니다.
           </p>
+
+          {/* 은둔 청년 공감 문구 */}
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 1.8, delay: 0.8 }}
+            style={{
+              marginTop: "1.25rem",
+              fontSize: "0.72rem",
+              color: "var(--accent-light)",
+              lineHeight: 2,
+              fontWeight: 300,
+              letterSpacing: "0.04em",
+              fontStyle: "italic",
+            }}
+          >
+            지금 잠시 멈춰있어도, 방 안에 머물고 있어도 괜찮아요.
+            <br />
+            당신의 존재는 그 자체로 이미 충분한 축하니까요.
+          </motion.p>
         </motion.div>
 
         {/* 구분선 */}
@@ -647,6 +672,142 @@ export default function HomePage() {
         <br />
         생일날 가장 눈부신 케이크로 완성됩니다.
       </motion.p>
+
+      {/* 무드라이트 이펙트 — 쉴 키워드 선택 시 */}
+      <AnimatePresence>
+        {hasRestKeyword && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 1.5 }}
+            style={{
+              position: "fixed",
+              inset: 0,
+              pointerEvents: "none",
+              zIndex: 0,
+              background: "radial-gradient(ellipse at center, rgba(155, 142, 196, 0.08) 0%, rgba(122, 155, 181, 0.04) 40%, transparent 70%)",
+            }}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* About 팝업 트리거 */}
+      <motion.button
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 1.5 }}
+        onClick={() => setShowAbout(true)}
+        id="about-trigger"
+        style={{
+          position: "fixed", bottom: "1.5rem", right: "1.5rem",
+          width: 36, height: 36, borderRadius: "50%",
+          border: "1px solid var(--border)",
+          background: "var(--card-bg)",
+          color: "var(--text-muted)",
+          fontSize: "0.75rem",
+          cursor: "pointer",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          zIndex: 20, fontFamily: "inherit",
+          boxShadow: "0 2px 12px var(--shadow)",
+        }}
+        whileHover={{ scale: 1.1, borderColor: "var(--accent)" }}
+        whileTap={{ scale: 0.95 }}
+        aria-label="조각조각 이야기"
+      >
+        ?
+      </motion.button>
+
+      {/* About 팝업 */}
+      <AnimatePresence>
+        {showAbout && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setShowAbout(false)}
+            style={{
+              position: "fixed", inset: 0, zIndex: 100,
+              background: "rgba(0,0,0,0.6)",
+              backdropFilter: "blur(6px)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              padding: "1.5rem",
+            }}
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 24, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 16 }}
+              transition={{ duration: 0.35 }}
+              onClick={(e) => e.stopPropagation()}
+              style={{
+                width: "100%", maxWidth: 420,
+                background: "var(--card-bg)",
+                border: "1px solid var(--border)",
+                borderRadius: "4px",
+                padding: "2.5rem 2rem",
+                boxShadow: "0 16px 60px rgba(0,0,0,0.5)",
+                position: "relative",
+              }}
+            >
+              {/* 닫기 */}
+              <button
+                onClick={() => setShowAbout(false)}
+                style={{
+                  position: "absolute", top: "1rem", right: "1rem",
+                  background: "none", border: "none",
+                  color: "var(--text-muted)", cursor: "pointer",
+                  fontSize: "1.1rem", fontFamily: "inherit",
+                }}
+                aria-label="닫기"
+              >
+                ×
+              </button>
+
+              {/* 촛불 아이콘 */}
+              <div style={{ textAlign: "center", marginBottom: "1.5rem" }}>
+                <DigitalCandle flicker={true} size={32} />
+              </div>
+
+              <h2 style={{
+                fontSize: "1.1rem", fontWeight: 400,
+                color: "var(--text-primary)",
+                textAlign: "center", lineHeight: 1.7,
+                marginBottom: "1.5rem",
+              }}>
+                왜 &lsquo;조각조각&rsquo;을 만들었을까요
+              </h2>
+
+              <div style={{
+                fontSize: "0.8rem", color: "var(--text-secondary)",
+                lineHeight: 2.2, fontWeight: 300, letterSpacing: "0.02em",
+              }}>
+                <p style={{ marginBottom: "1rem" }}>
+                  세상의 중력이 너무 무겁게 느껴지는 날이 있습니다.
+                  나가야 하는데 발이 떨어지지 않고,
+                  전화를 받아야 하는데 손이 나가지 않는 날.
+                </p>
+                <p style={{ marginBottom: "1rem" }}>
+                  그런 날에도, 생일은 찾아옵니다.<br />
+                  그리고 그 하루만큼은—<br />
+                  누군가가 &ldquo;네가 있어줘서 고마워&rdquo라고<br />
+                  조용히 말해주는 것만으로도<br />
+                  세상의 무게가 조금 가벼워지지 않을까 생각했습니다.
+                </p>
+                <p style={{ marginBottom: "1rem" }}>
+                  <strong style={{ color: "var(--accent)", fontWeight: 400 }}>조각조각</strong>은
+                  그렇게 태어났습니다.<br />
+                  완벽하지 않아도, 서툴러도, 조각조각 모인 마음들이
+                  당신의 오늘을 조금 더 따뜻하게 만들어주길.
+                </p>
+                <p style={{ textAlign: "right", color: "var(--text-muted)", fontSize: "0.72rem" }}>
+                  — 규태
+                </p>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <style>{`@keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }`}</style>
     </main>

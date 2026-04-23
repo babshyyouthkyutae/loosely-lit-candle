@@ -100,8 +100,9 @@ export interface ToppingMeta {
 }
 
 export const DEFAULT_TOPPINGS = [
-  "영화", "음악", "쳅", "식물", "여행", "커피",
-  "게임", "고양이", "요리", "운동", "그림", "별"
+  "영화", "음악", "책", "식물", "여행", "커피",
+  "게임", "고양이", "요리", "운동", "그림", "별",
+  "조용한 휴식", "혼자만의 시간", "느린 걸음",
 ] as const;
 
 export const TOPPING_MAP: Record<string, ToppingMeta> = {
@@ -111,7 +112,7 @@ export const TOPPING_MAP: Record<string, ToppingMeta> = {
   "음악": { emoji: "🎵", label: "음표 초콜릿", soundType: "crunchy", color: "#7B5EA7",
     tagLabel: "음악",
     svgPath: "M9 18V5l12-2v13M9 18H7a2 2 0 01-2-2V9a2 2 0 012-2h2M21 16h-2a2 2 0 01-2-2V7a2 2 0 012-2h2" },
-  "쳅": { emoji: "📚", label: "페이지 쿠키", soundType: "crunchy", color: "#A0704A",
+  "책": { emoji: "📚", label: "페이지 쿠키", soundType: "crunchy", color: "#A0704A",
     tagLabel: "독서",
     svgPath: "M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" },
   "식물": { emoji: "🌿", label: "허브 잎", soundType: "fluffy", color: "#5A8A5A",
@@ -141,6 +142,16 @@ export const TOPPING_MAP: Record<string, ToppingMeta> = {
   "별": { emoji: "⭐", label: "별모양 스프링클", soundType: "chime", color: "#F5C842",
     tagLabel: "별",
     svgPath: "M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" },
+  // ─── 쉼 카테고리 (은둔 청년 공감) ─────────────────
+  "조용한 휴식": { emoji: "🕯️", label: "촛불 머랭", soundType: "fluffy", color: "#9B8EC4",
+    tagLabel: "휴식",
+    svgPath: "M12 2c-1 2-3 4-3 6a3 3 0 006 0c0-2-2-4-3-6zm-1 14h2v6h-2v-6z" },
+  "혼자만의 시간": { emoji: "🌙", label: "달빛 무스", soundType: "fluffy", color: "#7A9BB5",
+    tagLabel: "나만의시간",
+    svgPath: "M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" },
+  "느린 걸음": { emoji: "🐌", label: "달팽이 쿠키", soundType: "fluffy", color: "#8AAE7F",
+    tagLabel: "느리게",
+    svgPath: "M12 21a9 9 0 010-18c3 0 5.5 1.5 7 4-1.5-1-3.5-1.5-5.5-.5S10 9 10 11s1 4 3 5 4.5 1 6 0c-1.5 2.5-4 5-7 5z" },
 };
 
 // ─── KST 기준 오늘 날짜 "YYYY-MM-DD" ─────────────────────
