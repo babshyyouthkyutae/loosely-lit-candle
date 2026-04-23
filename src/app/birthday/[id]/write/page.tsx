@@ -1,10 +1,243 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence, useAnimation } from "framer-motion";
-import { PIECE_META, type PieceType } from "@/lib/supabase";
+import { PIECE_META, TOPPING_MAP, DEFAULT_TOPPINGS, type PieceType } from "@/lib/supabase";
+
+// ─── Web Audio 효과음 ──────────────────────────────────────
+function playSound(type: "fluffy" | "crunchy" | "chime") {
+  try {
+    const ctx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
+    if (type === "fluffy") {
+      // 폭신한 소리: 사인파 하강 + 소프트 노이즈
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.frequency.setValueAtTime(260, ctx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(90, ctx.currentTime + 0.3);
+      gain.gain.setValueAtTime(0.25, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.45);
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.start(); osc.stop(ctx.currentTime + 0.45);
+    } else if (type === "crunchy") {
+      // 사각거리는 소리: 부드러운 노이즈
+      const buffer = ctx.createBuffer(1, ctx.sampleRate * 0.12, ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < data.length; i++) {
+        data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / data.length, 2.5);
+      }
+      const src = ctx.createBufferSource();
+      const filter = ctx.createBiquadFilter();
+      const gain = ctx.createGain();
+      filter.type = "bandpass"; filter.frequency.value = 3500; filter.Q.value = 0.8;
+      gain.gain.setValueAtTime(0.35, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
+      src.buffer = buffer;
+      src.connect(filter); filter.connect(gain); gain.connect(ctx.destination);
+      src.start();
+    } else {
+      // 창스럽는 후마 소리: 높은 피치 싵
+      [880, 1108, 1320].forEach((freq, i) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.frequency.value = freq;
+        osc.type = "sine";
+        gain.gain.setValueAtTime(0, ctx.currentTime + i * 0.06);
+        gain.gain.linearRampToValueAtTime(0.18, ctx.currentTime + i * 0.06 + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.06 + 0.35);
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.start(ctx.currentTime + i * 0.06);
+        osc.stop(ctx.currentTime + i * 0.06 + 0.35);
+      });
+    }
+  } catch { /* 사용자 제시가 없으면 무시 */ }
+}
+
+// ─── 토핑 장난 컴포넌트 ──────────────────────────────────
+interface ToppingTrayProps {
+  keywords: string[];
+  recipientName: string;
+  onTagAdded: (tag: string) => void;
+}
+
+function ToppingTray({ keywords, recipientName, onTagAdded }: ToppingTrayProps) {
+  const [tooltip, setTooltip] = useState<{ id: string; text: string } | null>(null);
+  const [loadingId, setLoadingId] = useState<string | null>(null);
+  const [flownIds, setFlownIds] = useState<Set<string>>(new Set());
+  const recipeCache = useRef<Map<string, string>>(new Map());
+
+  const fetchRecipe = useCallback(async (kw: string) => {
+    if (recipeCache.current.has(kw)) {
+      setTooltip({ id: kw, text: recipeCache.current.get(kw)! });
+      return;
+    }
+    setLoadingId(kw);
+    try {
+      const res = await fetch("/api/topping-recipe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ keyword: kw, recipientName }),
+      });
+      const data = await res.json();
+      recipeCache.current.set(kw, data.recipe);
+      setTooltip({ id: kw, text: data.recipe });
+    } catch {
+      setTooltip({ id: kw, text: `이 #${kw} 토핑을 얹어 오늘을 달콤하게 만들게요.` });
+    } finally {
+      setLoadingId(null);
+    }
+  }, [recipientName]);
+
+  const handleClick = (kw: string, soundType: "fluffy" | "crunchy" | "chime") => {
+    if (flownIds.has(kw)) return;
+    playSound(soundType);
+    setFlownIds(prev => new Set(prev).add(kw));
+    onTagAdded(kw);
+    setTimeout(() => {
+      setFlownIds(prev => { const n = new Set(prev); n.delete(kw); return n; });
+    }, 1200);
+  };
+
+  const displayKeywords = keywords.length > 0
+    ? keywords.filter(k => TOPPING_MAP[k])
+    : DEFAULT_TOPPINGS.slice(0, 8).filter(k => TOPPING_MAP[k]) as string[];
+
+  if (displayKeywords.length === 0) return null;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.3, duration: 0.6 }}
+      style={{
+        marginBottom: "1.5rem",
+        background: "linear-gradient(135deg, rgba(255,248,236,0.06) 0%, rgba(212,168,120,0.04) 100%)",
+        border: "1px solid var(--accent-light)",
+        borderRadius: "8px",
+        padding: "1.25rem 1rem",
+        position: "relative",
+      }}
+    >
+      {/* 도자기 장난 상단 선 */}
+      <div style={{
+        position: "absolute", top: 0, left: "5%", right: "5%", height: "2px",
+        background: "linear-gradient(90deg, transparent, var(--accent), transparent)",
+        opacity: 0.4, borderRadius: "1px",
+      }} />
+
+      <p style={{
+        fontSize: "0.65rem", letterSpacing: "0.18em", color: "var(--text-muted)",
+        textTransform: "uppercase", marginBottom: "1rem", textAlign: "center",
+      }}>
+        토핑 쌍반 — 클릭하면 메시지에 태그되어요
+      </p>
+
+      <div style={{
+        display: "flex", flexWrap: "wrap", gap: "0.625rem",
+        justifyContent: "center",
+      }}>
+        {displayKeywords.map((kw) => {
+          const meta = TOPPING_MAP[kw];
+          if (!meta) return null;
+          const isFlying = flownIds.has(kw);
+          return (
+            <div key={kw} style={{ position: "relative" }}>
+              {/* 토핑 오브제 */}
+              <motion.button
+                type="button"
+                id={`topping-${kw}`}
+                animate={isFlying
+                  ? { y: -60, x: 20, scale: 0.3, opacity: 0, rotate: 45 }
+                  : { y: 0, x: 0, scale: 1, opacity: 1, rotate: 0 }
+                }
+                whileHover={{ scale: 1.15, rotate: [-2, 2, -2, 0] }}
+                transition={isFlying
+                  ? { duration: 0.5, ease: [0.22, 1, 0.36, 1] }
+                  : { rotate: { duration: 0.4, repeat: Infinity, ease: "easeInOut" } }
+                }
+                onMouseEnter={() => fetchRecipe(kw)}
+                onMouseLeave={() => setTooltip(null)}
+                onClick={() => handleClick(kw, meta.soundType)}
+                style={{
+                  width: 64, height: 64,
+                  borderRadius: "50%",
+                  border: `1.5px solid ${meta.color}55`,
+                  background: `radial-gradient(circle at 35% 35%, ${meta.color}30, ${meta.color}12)`,
+                  cursor: isFlying ? "default" : "pointer",
+                  display: "flex", flexDirection: "column",
+                  alignItems: "center", justifyContent: "center", gap: "2px",
+                  boxShadow: `0 2px 12px ${meta.color}25, inset 0 1px 2px rgba(255,255,255,0.1)`,
+                  position: "relative", overflow: "visible",
+                }}
+              >
+                {/* 별빛 하이라이트 */}
+                <div style={{
+                  position: "absolute", top: 6, left: 10, width: 8, height: 8,
+                  borderRadius: "50%",
+                  background: `radial-gradient(circle, rgba(255,255,255,0.6), transparent)`,
+                  pointerEvents: "none",
+                }} />
+                <span style={{ fontSize: "1.4rem", lineHeight: 1 }}>{meta.emoji}</span>
+                <span style={{ fontSize: "0.5rem", color: meta.color, letterSpacing: "0.04em", opacity: 0.85 }}>{kw}</span>
+              </motion.button>
+
+              {/* 로딩 스피너 */}
+              {loadingId === kw && (
+                <div style={{
+                  position: "absolute", inset: -2, borderRadius: "50%",
+                  border: `2px solid ${meta.color}`, borderTopColor: "transparent",
+                  animation: "spin 0.8s linear infinite", pointerEvents: "none",
+                }} />
+              )}
+
+              {/* 레시피 말풍선 */}
+              <AnimatePresence>
+                {tooltip?.id === kw && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 6, scale: 0.92 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.92 }}
+                    transition={{ duration: 0.2 }}
+                    style={{
+                      position: "absolute", bottom: "calc(100% + 10px)",
+                      left: "50%", transform: "translateX(-50%)",
+                      width: 180, padding: "0.625rem 0.75rem",
+                      background: "var(--card-bg)",
+                      border: `1px solid ${meta.color}44`,
+                      borderRadius: "8px",
+                      boxShadow: `0 4px 20px ${meta.color}30`,
+                      fontSize: "0.65rem", color: "var(--text-primary)",
+                      lineHeight: 1.65, zIndex: 50, fontWeight: 300,
+                      pointerEvents: "none",
+                    }}
+                  >
+                    {tooltip.text}
+                    {/* 화살표 */}
+                    <div style={{
+                      position: "absolute", bottom: -5, left: "50%",
+                      width: 8, height: 8, background: "var(--card-bg)",
+                      border: `1px solid ${meta.color}44`,
+                      borderTop: "none", borderLeft: "none",
+                      transform: "translateX(-50%) rotate(45deg)",
+                    }} />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          );
+        })}
+      </div>
+
+      <p style={{
+        textAlign: "center", fontSize: "0.6rem", color: "var(--text-muted)",
+        marginTop: "0.875rem", opacity: 0.6, letterSpacing: "0.06em",
+      }}>
+        토핑 위에 마우스를 올리면 레시피를 볼 수 있어요
+      </p>
+    </motion.div>
+  );
+}
 
 // ─── Write페이지용 촛불 미니 컴포넌트 ─────────────────────────────────
 function WriteCandle({ flicker = false }: { flicker?: boolean }) {
@@ -85,6 +318,7 @@ interface BirthdayRecord {
   id: string;
   name: string;
   birthday: string;
+  preferences: string[];
 }
 
 const MAX_CHARS = 500;
@@ -493,7 +727,19 @@ export default function WritePage() {
             </div>
           </div>
 
+          {/* ─ 토핑 장난 ─ */}
+          <ToppingTray
+            keywords={record.preferences ?? []}
+            recipientName={record.name}
+            onTagAdded={(kw) => setContent(prev => {
+              const tag = `#${kw}`;
+              if (prev.includes(tag)) return prev;
+              return prev ? `${prev} ${tag}` : tag;
+            })}
+          />
+
           {/* 작성자 이름 */}
+
           <div style={{ marginBottom: "2rem" }}>
             <label htmlFor="message-author" style={labelStyle}>조각을 보내는 사람</label>
             <input

@@ -17,7 +17,7 @@ export async function GET(request: Request) {
   // 1. birthdays 레코드 조회
   const { data: birthday, error: bdError } = await supabase
     .from("birthdays")
-    .select("id, name, birthday, email, created_at")
+    .select("id, name, birthday, email, preferences, created_at")
     .eq("id", id)
     .single();
 
@@ -87,7 +87,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { birthday, name, email } = body;
+    const { birthday, name, email, preferences } = body;
 
     // 유효성 검사
     if (!birthday) {
@@ -124,12 +124,16 @@ export async function POST(request: Request) {
     }
 
     const id = randomBytes(4).toString("hex");
+    const validPrefs = Array.isArray(preferences)
+      ? preferences.filter((p: unknown) => typeof p === "string").slice(0, 20)
+      : [];
 
     const { error } = await supabase.from("birthdays").insert({
       id,
       name: name?.trim() || "익명",
       birthday,
       email: email?.trim() || null,
+      preferences: validPrefs,
     });
 
     if (error) {

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion, useAnimation, AnimatePresence } from "framer-motion";
+import { TOPPING_MAP } from "@/lib/supabase";
 
 // ─── 디지털 촛불 컴포넌트 (Framer Motion) ─────────────────
 interface CandleProps {
@@ -131,9 +132,16 @@ export default function HomePage() {
   const [birthday, setBirthday] = useState("");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [preferences, setPreferences] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [submitted, setSubmitted] = useState(false); // 제출 성공 트리거
+
+  const togglePref = (kw: string) => {
+    setPreferences(prev =>
+      prev.includes(kw) ? prev.filter(p => p !== kw) : [...prev, kw]
+    );
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -150,7 +158,7 @@ export default function HomePage() {
       const response = await fetch("/api/birthday", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ birthday, name: name.trim() || "익명", email: email.trim() || null }),
+        body: JSON.stringify({ birthday, name: name.trim() || "익명", email: email.trim() || null, preferences }),
       });
 
       if (!response.ok) throw new Error("서버 오류가 발생했습니다.");
@@ -425,6 +433,48 @@ export default function HomePage() {
               onFocus={(e) => (e.currentTarget.style.borderBottomColor = "var(--accent)")}
               onBlur={(e) => (e.currentTarget.style.borderBottomColor = "var(--border)")}
             />
+          </motion.div>
+
+          {/* 취향 키워드 선택 */}
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.8 }}
+            style={{ marginBottom: "2rem" }}
+          >
+            <label style={{
+              display: "block", fontSize: "0.7rem", letterSpacing: "0.15em",
+              color: "var(--text-muted)", marginBottom: "0.75rem", textTransform: "uppercase",
+            }}>
+              취향 키워드
+              <span style={{ fontSize: "0.65rem", letterSpacing: 0, marginLeft: "0.5rem", fontWeight: 300 }}>
+                — 케이크 토핑으로 언제키워요
+              </span>
+            </label>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem" }}>
+              {Object.entries(TOPPING_MAP).map(([kw, meta]) => (
+                <button
+                  key={kw}
+                  type="button"
+                  id={`pref-${kw}`}
+                  onClick={() => togglePref(kw)}
+                  style={{
+                    padding: "0.3rem 0.7rem",
+                    borderRadius: "999px",
+                    border: `1.5px solid ${preferences.includes(kw) ? meta.color : "var(--border)"}`,
+                    background: preferences.includes(kw) ? `${meta.color}22` : "transparent",
+                    fontSize: "0.72rem",
+                    color: preferences.includes(kw) ? meta.color : "var(--text-muted)",
+                    cursor: "pointer",
+                    transition: "all 0.2s ease",
+                    fontFamily: "inherit",
+                    display: "flex", alignItems: "center", gap: "0.25rem",
+                  }}
+                >
+                  <span>{meta.emoji}</span>{kw}
+                </button>
+              ))}
+            </div>
           </motion.div>
 
           {/* 에러 메시지 */}
