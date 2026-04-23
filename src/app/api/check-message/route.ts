@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
-import { localFilter } from "@/lib/filter";
+import { localFilter, contextFilter } from "@/lib/filter";
 
 // ─── 3차 Rate Limiting (IP당 1분에 3회) ─────────────
+
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
 
 function checkRateLimit(ip: string): boolean {
@@ -159,7 +160,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ safe: true });
   }
 
-  // 1차: 로컬 Regex 필터
+  // 1차: 로컬 Regex 필터 (비속어)
   const localResult = localFilter(content);
   if (localResult.blocked) {
     return NextResponse.json({
@@ -170,7 +171,17 @@ export async function POST(request: Request) {
     });
   }
 
-  // 2차: Gemini Flash 필터 (100자 이하 + 캐싱)
+  // 1.5차: 맥락적 공격 필터 (은둔 청년 특화 — Regex)
+  const contextResult = contextFilter(content);
+  if (contextResult.blocked) {
+    return NextResponse.json({
+      safe: false,
+      reason: "context_attack",
+      suggestion: contextResult.suggestion,
+    });
+  }
+
+  // 2차: Gemini Flash 필터 (캐싱)
   const geminiResult = await geminiFilter(content);
 
   return NextResponse.json({
