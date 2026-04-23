@@ -257,17 +257,17 @@ export default function HomePage() {
         >
           <h1
             style={{
-              fontSize: "1.6rem",
+              fontSize: "1.5rem",
               fontWeight: 400,
               color: "var(--text-primary)",
-              lineHeight: 1.5,
+              lineHeight: 1.6,
               letterSpacing: "-0.01em",
               marginBottom: "0.875rem",
             }}
           >
-            당신의 생일을
+            당신만을 위한
             <br />
-            기억하고 싶어요
+            빈 케이크 판을 준비했어요
           </h1>
           <p
             style={{
@@ -277,9 +277,9 @@ export default function HomePage() {
               fontWeight: 300,
             }}
           >
-            혼자인 것 같아도, 누군가는 조용히
+            조각조각 모여든 마음들이
             <br />
-            당신의 날을 기다리고 있어요.
+            당신의 오늘을 완성합니다.
           </p>
         </motion.div>
 
@@ -435,7 +435,7 @@ export default function HomePage() {
             />
           </motion.div>
 
-          {/* 취향 키워드 선택 */}
+          {/* 취향 키워드 선택 — 토핑 시스템 */}
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
@@ -446,35 +446,105 @@ export default function HomePage() {
               display: "block", fontSize: "0.7rem", letterSpacing: "0.15em",
               color: "var(--text-muted)", marginBottom: "0.75rem", textTransform: "uppercase",
             }}>
-              취향 키워드
+              취향 토핑
               <span style={{ fontSize: "0.65rem", letterSpacing: 0, marginLeft: "0.5rem", fontWeight: 300 }}>
-                — 케이크 토핑으로 언제키워요
+                — 케이크를 꾸밀 재료를 골라요
               </span>
             </label>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "0.4rem" }}>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
               {Object.entries(TOPPING_MAP).map(([kw, meta]) => (
-                <button
+                <motion.button
                   key={kw}
                   type="button"
                   id={`pref-${kw}`}
                   onClick={() => togglePref(kw)}
+                  whileTap={{ y: -8, scale: 1.08 }}
+                  animate={preferences.includes(kw)
+                    ? { scale: [1, 1.12, 0.95, 1.04, 1], y: [0, -12, 2, -4, 0] }
+                    : { scale: 1, y: 0 }
+                  }
+                  transition={preferences.includes(kw)
+                    ? { duration: 0.4, ease: "easeOut" }
+                    : { duration: 0.15 }
+                  }
                   style={{
-                    padding: "0.3rem 0.7rem",
+                    padding: "0.4rem 0.8rem",
                     borderRadius: "999px",
                     border: `1.5px solid ${preferences.includes(kw) ? meta.color : "var(--border)"}`,
                     background: preferences.includes(kw) ? `${meta.color}22` : "transparent",
-                    fontSize: "0.72rem",
+                    fontSize: "0.75rem",
                     color: preferences.includes(kw) ? meta.color : "var(--text-muted)",
                     cursor: "pointer",
-                    transition: "all 0.2s ease",
+                    transition: "background 0.2s, border-color 0.2s, color 0.2s",
                     fontFamily: "inherit",
-                    display: "flex", alignItems: "center", gap: "0.25rem",
+                    display: "flex", alignItems: "center", gap: "0.3rem",
                   }}
                 >
-                  <span>{meta.emoji}</span>{kw}
-                </button>
+                  <span style={{ fontSize: "0.9rem" }}>{meta.emoji}</span>{kw}
+                </motion.button>
               ))}
             </div>
+
+            {/* 우드 쌍반 — 선택된 토핑 모음 */}
+            <AnimatePresence>
+              {preferences.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.35 }}
+                  style={{
+                    marginTop: "1rem",
+                    padding: "0.875rem 1rem",
+                    background: "var(--wood-tray)",
+                    border: "1px solid var(--wood-tray-border)",
+                    borderRadius: "6px",
+                    position: "relative",
+                    overflow: "hidden",
+                  }}
+                >
+                  {/* 우드 쌍반 상단 반사광 */}
+                  <div style={{
+                    position: "absolute", top: 0, left: "8%", right: "8%",
+                    height: "1px",
+                    background: "linear-gradient(90deg, transparent, var(--accent-warm), transparent)",
+                    opacity: 0.3,
+                  }} />
+                  <p style={{
+                    fontSize: "0.6rem", letterSpacing: "0.15em", color: "var(--text-muted)",
+                    marginBottom: "0.5rem", textTransform: "uppercase",
+                  }}>
+                    쌍반 위의 토핑들
+                  </p>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "0.375rem" }}>
+                    {preferences.map(kw => {
+                      const m = TOPPING_MAP[kw];
+                      if (!m) return null;
+                      return (
+                        <motion.span
+                          key={kw}
+                          initial={{ scale: 0, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          exit={{ scale: 0, opacity: 0 }}
+                          transition={{ type: "spring", stiffness: 400, damping: 15 }}
+                          style={{
+                            display: "inline-flex", alignItems: "center", gap: "0.2rem",
+                            padding: "0.25rem 0.6rem",
+                            borderRadius: "999px",
+                            background: `${m.color}28`,
+                            border: `1px solid ${m.color}55`,
+                            fontSize: "0.68rem",
+                            color: m.color,
+                          }}
+                        >
+                          {m.emoji} {kw}
+                        </motion.span>
+                      );
+                    })}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </motion.div>
 
           {/* 에러 메시지 */}
@@ -533,7 +603,7 @@ export default function HomePage() {
                 </svg>
                 잠시만요…
               </span>
-            ) : "나의 롤링페이퍼 만들기"}
+            ) : "다정함이 모이는 자리 만들기"}
           </motion.button>
         </form>
       </motion.div>
@@ -555,6 +625,27 @@ export default function HomePage() {
         당신의 생일과 이메일은 안전하게 보관되며
         <br />
         D-7 · D-1 · 생일 당일에 조용히 알림을 드려요.
+      </motion.p>
+
+      {/* 케이크 보관 메시지 */}
+      <motion.p
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 1.2, delay: 1.3 }}
+        style={{
+          marginTop: "0.75rem",
+          fontSize: "0.65rem",
+          color: "var(--accent-light)",
+          textAlign: "center",
+          lineHeight: 1.8,
+          fontWeight: 300,
+          letterSpacing: "0.06em",
+          fontStyle: "italic",
+        }}
+      >
+        당신의 조각은 소중히 보관되며,
+        <br />
+        생일날 가장 눈부신 케이크로 완성됩니다.
       </motion.p>
 
       <style>{`@keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }`}</style>

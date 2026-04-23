@@ -1,19 +1,21 @@
 @import "tailwindcss";
 
-/* ─── 기본: 딥 웜 다크 (Deep Warm Dark) ─────────────────── */
+/* ─── 기본: 딥 웜 다크 (Deep Warm Dark — 우드 톤) ───────── */
 :root {
-  --ivory: #1C1812;
-  --ivory-dark: #241F18;
-  --ivory-deep: #2E271E;
-  --text-primary: #EDE3D0;
-  --text-secondary: #A89272;
-  --text-muted: #6E5E48;
+  --ivory: #1E1914;
+  --ivory-dark: #272017;
+  --ivory-deep: #31291E;
+  --text-primary: #F0E6D2;
+  --text-secondary: #B09872;
+  --text-muted: #7A674E;
   --accent: #D4A878;
   --accent-light: #8C6840;
-  --accent-warm: #C4956A;
-  --border: #3A3026;
-  --shadow: rgba(0, 0, 0, 0.35);
-  --card-bg: rgba(30, 24, 16, 0.92);
+  --accent-warm: #C8A070;
+  --border: #3E3328;
+  --shadow: rgba(0, 0, 0, 0.4);
+  --card-bg: rgba(32, 26, 18, 0.94);
+  --wood-tray: rgba(50, 40, 26, 0.6);
+  --wood-tray-border: rgba(196, 149, 106, 0.25);
   --font-main: var(--font-nanum-myeongjo), 'Nanum Myeongjo', 'Georgia', serif;
 }
 
@@ -55,13 +57,14 @@ body {
   transition: background-color 0.4s ease, color 0.4s ease;
 }
 
-/* ─── 종이 질감 배경 ─────────────────────────────────── */
+/* ─── 나뭇결 텍스처 배경 ─────────────────────────── */
 body::before {
   content: '';
   position: fixed;
   inset: 0;
   background-image:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='400' height='400' filter='url(%23noise)' opacity='0.035'/%3E%3C/svg%3E");
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='wood'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.04 0.9' numOctaves='5' seed='3' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23wood)' opacity='0.025'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='grain'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='400' height='400' filter='url(%23grain)' opacity='0.03'/%3E%3C/svg%3E");
   pointer-events: none;
   z-index: 0;
 }
