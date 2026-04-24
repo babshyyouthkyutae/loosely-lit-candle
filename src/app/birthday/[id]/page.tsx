@@ -218,6 +218,15 @@ export default function BirthdayPage() {
   const [copied, setCopied] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [arriveShown, setArriveShown] = useState(false);
+  const [isOwner, setIsOwner] = useState(false);
+
+  // 주인 여부 판별 (localStorage)
+  useEffect(() => {
+    try {
+      const owned: string[] = JSON.parse(localStorage.getItem("owned_cakes") || "[]");
+      setIsOwner(owned.includes(id));
+    } catch { setIsOwner(false); }
+  }, [id]);
 
   useEffect(() => {
     if (!id) return;
@@ -411,48 +420,100 @@ export default function BirthdayPage() {
         transition={{ delay: 0.5, duration: 0.6 }}
         style={{ width: "100%", maxWidth: 400, display: "flex", flexDirection: "column", gap: "0.75rem" }}
       >
-        <button
-          id="write-piece-btn"
-          onClick={() => router.push(`/birthday/${id}/write`)}
-          style={{
-            width: "100%", padding: "0.9375rem",
-            background: "var(--text-primary)", color: "var(--ivory)",
-            border: "none", borderRadius: 2, fontSize: "0.875rem",
-            letterSpacing: "0.1em", cursor: "pointer", transition: "background 0.3s ease",
-            fontFamily: "inherit", fontWeight: 400,
-            display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem",
-          }}
-          onMouseEnter={(e) => { e.currentTarget.style.background = "var(--accent)"; }}
-          onMouseLeave={(e) => { e.currentTarget.style.background = "var(--text-primary)"; }}
-        >
-          <span style={{ fontSize: "1rem" }}>🍰</span>
-          마음 한 조각 보태기
-        </button>
+        {isOwner ? (
+          /* ── 케이크 주인 UI ── */
+          <>
+            <button
+              id="save-cake-btn"
+              onClick={handleCopyLink}
+              style={{
+                width: "100%", padding: "0.9375rem",
+                background: "var(--accent-warm)", color: "var(--ivory)",
+                border: "none", borderRadius: 2, fontSize: "0.875rem",
+                letterSpacing: "0.08em", cursor: "pointer",
+                transition: "background 0.3s ease, box-shadow 0.3s ease",
+                fontFamily: "inherit", fontWeight: 400,
+                display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem",
+                boxShadow: "0 2px 16px rgba(200, 160, 112, 0.2)",
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = "var(--accent)"; e.currentTarget.style.boxShadow = "0 4px 24px rgba(200, 160, 112, 0.35)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = "var(--accent-warm)"; e.currentTarget.style.boxShadow = "0 2px 16px rgba(200, 160, 112, 0.2)"; }}
+            >
+              <span style={{ fontSize: "1rem" }}>🕯️</span>
+              {copied ? "링크가 복사되었어요" : "다정한 조각들 소중히 간직하기"}
+            </button>
 
-        <button
-          id="copy-link-btn"
-          onClick={handleCopyLink}
-          style={{
-            width: "100%", padding: "0.875rem",
-            background: "transparent", border: "1px solid var(--border)",
-            borderRadius: 2, fontSize: "0.8125rem",
-            color: copied ? "var(--accent)" : "var(--text-secondary)",
-            cursor: "pointer", transition: "all 0.3s ease",
-            fontFamily: "inherit", letterSpacing: "0.05em",
-            display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem",
-          }}
-          onMouseEnter={(e) => { if (!copied) { e.currentTarget.style.borderColor = "var(--accent-light)"; e.currentTarget.style.color = "var(--accent)"; }}}
-          onMouseLeave={(e) => { if (!copied) { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.color = "var(--text-secondary)"; }}}
-        >
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
-            {copied ? <path d="M2 7l3.5 3.5L12 3" /> : (<><rect x="4" y="4" width="8" height="8" rx="1" /><path d="M2 10V2h8" /></>)}
-          </svg>
-          {copied ? "링크가 복사되었어요" : "링크 복사하기"}
-        </button>
+            <button
+              id="share-cake-btn"
+              onClick={() => router.push(`/birthday/${id}/write`)}
+              style={{
+                width: "100%", padding: "0.875rem",
+                background: "transparent",
+                border: "1px solid var(--border)",
+                borderRadius: 2, fontSize: "0.8125rem",
+                color: "var(--text-secondary)",
+                cursor: "pointer", transition: "all 0.3s ease",
+                fontFamily: "inherit", letterSpacing: "0.05em",
+                display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem",
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.borderColor = "var(--accent-light)"; e.currentTarget.style.color = "var(--accent)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.color = "var(--text-secondary)"; }}
+            >
+              <span style={{ fontSize: "0.9rem" }}>🍰</span>
+              나도 조각 보태기
+            </button>
 
-        <p style={{ textAlign: "center", fontSize: "0.7rem", color: "var(--text-muted)", fontWeight: 300, lineHeight: 1.7 }}>
-          링크를 공유하면 누구나 조각을 보탤 수 있어요
-        </p>
+            <p style={{ textAlign: "center", fontSize: "0.72rem", color: "var(--accent-light)", fontWeight: 300, lineHeight: 1.8, fontStyle: "italic" }}>
+              당신을 향한 따뜻한 마음들이 이만큼 모였어요.
+            </p>
+          </>
+        ) : (
+          /* ── 방문자 UI ── */
+          <>
+            <button
+              id="write-piece-btn"
+              onClick={() => router.push(`/birthday/${id}/write`)}
+              style={{
+                width: "100%", padding: "0.9375rem",
+                background: "var(--text-primary)", color: "var(--ivory)",
+                border: "none", borderRadius: 2, fontSize: "0.875rem",
+                letterSpacing: "0.1em", cursor: "pointer", transition: "background 0.3s ease",
+                fontFamily: "inherit", fontWeight: 400,
+                display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem",
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = "var(--accent)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = "var(--text-primary)"; }}
+            >
+              <span style={{ fontSize: "1rem" }}>🍰</span>
+              다정한 조각 하나 보태기
+            </button>
+
+            <button
+              id="copy-link-btn"
+              onClick={handleCopyLink}
+              style={{
+                width: "100%", padding: "0.875rem",
+                background: "transparent", border: "1px solid var(--border)",
+                borderRadius: 2, fontSize: "0.8125rem",
+                color: copied ? "var(--accent)" : "var(--text-secondary)",
+                cursor: "pointer", transition: "all 0.3s ease",
+                fontFamily: "inherit", letterSpacing: "0.05em",
+                display: "flex", alignItems: "center", justifyContent: "center", gap: "0.5rem",
+              }}
+              onMouseEnter={(e) => { if (!copied) { e.currentTarget.style.borderColor = "var(--accent-light)"; e.currentTarget.style.color = "var(--accent)"; }}}
+              onMouseLeave={(e) => { if (!copied) { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.color = "var(--text-secondary)"; }}}
+            >
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
+                {copied ? <path d="M2 7l3.5 3.5L12 3" /> : (<><rect x="4" y="4" width="8" height="8" rx="1" /><path d="M2 10V2h8" /></>)}
+              </svg>
+              {copied ? "링크가 복사되었어요" : "링크 복사하기"}
+            </button>
+
+            <p style={{ textAlign: "center", fontSize: "0.7rem", color: "var(--text-muted)", fontWeight: 300, lineHeight: 1.7 }}>
+              {record.name}님의 케이크를 당신의 마음으로 완성해주세요.
+            </p>
+          </>
+        )}
       </motion.div>
 
       <style>{`@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`}</style>

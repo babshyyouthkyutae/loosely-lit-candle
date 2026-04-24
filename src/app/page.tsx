@@ -170,6 +170,13 @@ export default function HomePage() {
 
       const data = await response.json();
 
+      // 케이크 주인 식별용 — localStorage에 ID 기록
+      try {
+        const owned: string[] = JSON.parse(localStorage.getItem("owned_cakes") || "[]");
+        if (!owned.includes(data.id)) owned.push(data.id);
+        localStorage.setItem("owned_cakes", JSON.stringify(owned));
+      } catch { /* SSR / private browsing fallback */ }
+
       // 촛불 일렁임 트리거 후 페이지 이동
       setSubmitted(true);
       setTimeout(() => router.push(`/birthday/${data.id}`), 800);
