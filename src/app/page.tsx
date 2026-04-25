@@ -330,6 +330,56 @@ export default function HomePage() {
           aria-hidden="true"
         />
 
+        {/* 브랜드 미션 — 3가지 약속 */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.7, delay: 0.55 }}
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            gap: "2rem",
+            marginBottom: "2.5rem",
+            flexWrap: "wrap",
+          }}
+        >
+          {[
+            { icon: "❛", label: "멈춰있어도", sub: "괜찮아요." },
+            { icon: "🧩", label: "당신의 취향은", sub: "소중해요." },
+            { icon: "🔗", label: "혼자지만", sub: "혼자가 아니에요." },
+          ].map((v, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.7 + i * 0.12, duration: 0.5 }}
+              style={{
+                textAlign: "center",
+                minWidth: 90,
+              }}
+            >
+              <div style={{
+                fontSize: "1.1rem",
+                marginBottom: "0.4rem",
+                opacity: 0.7,
+              }}>
+                {v.icon}
+              </div>
+              <p style={{
+                fontSize: "0.68rem",
+                color: "var(--text-secondary)",
+                fontWeight: 400,
+                lineHeight: 1.6,
+                letterSpacing: "0.03em",
+              }}>
+                {v.label}
+                <br />
+                <span style={{ color: "var(--accent)", fontWeight: 300 }}>{v.sub}</span>
+              </p>
+            </motion.div>
+          ))}
+        </motion.div>
+
         {/* 폼 */}
         <form onSubmit={handleSubmit} noValidate>
           {/* 이름 입력 */}
@@ -351,6 +401,9 @@ export default function HomePage() {
               }}
             >
               이름 또는 닉네임
+              <span style={{ fontSize: "0.6rem", letterSpacing: 0, marginLeft: "0.5rem", fontWeight: 300, textTransform: "none" }}>
+                — 가장 편안한 이름으로 불려주세요
+              </span>
             </label>
             <input
               id="name-input"
@@ -465,6 +518,18 @@ export default function HomePage() {
               onFocus={(e) => (e.currentTarget.style.borderBottomColor = "var(--accent)")}
               onBlur={(e) => (e.currentTarget.style.borderBottomColor = "var(--border)")}
             />
+            <p style={{
+              marginTop: "0.5rem",
+              fontSize: "0.6rem",
+              color: "var(--text-muted)",
+              lineHeight: 1.7,
+              fontWeight: 300,
+              fontStyle: "italic",
+              letterSpacing: "0.02em",
+            }}>
+              다정한 소식 외에 광고나 스팸은 절대 보내지 않습니다.
+              <br />우리는 당신의 고요함을 존중합니다.
+            </p>
           </motion.div>
 
           {/* 취향 키워드 선택 — 토핑 시스템 */}
@@ -472,17 +537,36 @@ export default function HomePage() {
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.8 }}
-            style={{ marginBottom: "2rem" }}
+            style={{
+              marginBottom: "2rem",
+              padding: "1.25rem 1rem 1rem",
+              background: "var(--wood-tray)",
+              border: "1px solid var(--wood-tray-border)",
+              borderRadius: "8px",
+              position: "relative",
+              overflow: "hidden",
+            }}
           >
+            {/* 쟁반 상단 반사광 */}
+            <div style={{
+              position: "absolute", top: 0, left: "10%", right: "10%",
+              height: "1px",
+              background: "linear-gradient(90deg, transparent, var(--accent-warm), transparent)",
+              opacity: 0.25,
+            }} />
             <label style={{
               display: "block", fontSize: "0.7rem", letterSpacing: "0.15em",
-              color: "var(--text-muted)", marginBottom: "0.75rem", textTransform: "uppercase",
+              color: "var(--text-muted)", marginBottom: "0.25rem", textTransform: "uppercase",
             }}>
               취향 토핑
-              <span style={{ fontSize: "0.65rem", letterSpacing: 0, marginLeft: "0.5rem", fontWeight: 300 }}>
-                — 케이크를 꾸밀 재료를 골라요
-              </span>
             </label>
+            <p style={{
+              fontSize: "0.65rem", color: "var(--text-muted)", fontWeight: 300,
+              lineHeight: 1.7, marginBottom: "0.875rem", fontStyle: "italic",
+              letterSpacing: "0.02em",
+            }}>
+              당신의 방 안을 채운 소중한 조각들을 골라주세요.
+            </p>
             <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem" }}>
               {Object.entries(TOPPING_MAP).map(([kw, meta]) => (
                 <motion.button
@@ -678,6 +762,27 @@ export default function HomePage() {
         당신의 조각은 소중히 보관되며,
         <br />
         생일날 가장 눈부신 케이크로 완성됩니다.
+      </motion.p>
+
+      {/* 브랜드 철학 */}
+      <motion.p
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 1.5, delay: 1.8 }}
+        style={{
+          marginTop: "2.5rem",
+          fontSize: "0.82rem",
+          color: "var(--text-secondary)",
+          textAlign: "center",
+          lineHeight: 2,
+          fontWeight: 400,
+          letterSpacing: "0.12em",
+          fontFamily: "var(--font-main)",
+        }}
+      >
+        조각조각 모인 마음은
+        <br />
+        쉽게 무너지지 않습니다.
       </motion.p>
 
       {/* 무드라이트 이펙트 — 쉴 키워드 선택 시 */}
