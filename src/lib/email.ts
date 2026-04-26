@@ -87,7 +87,7 @@ function buildEmailHtml({
       ? `
       <div style="margin: 28px 0; border-left: 2px solid #D4A878; padding-left: 20px;">
         <p style="font-size: 11px; letter-spacing: 0.15em; color: #B0A08A; text-transform: uppercase; margin-bottom: 12px;">
-          받은 메시지
+          받은 조각
         </p>
         ${messages
           .slice(0, 2)
@@ -101,7 +101,7 @@ function buildEmailHtml({
           .join("")}
         ${
           messages.length > 2
-            ? `<p style="font-size: 12px; color: #C4956A; margin-top: 8px;">+${messages.length - 2}개의 메시지가 더 있어요</p>`
+             ? `<p style="font-size: 12px; color: #C4956A; margin-top: 8px;">+${messages.length - 2}개의 조각이 더 있어요</p>`
             : ""
         }
       </div>`
@@ -109,8 +109,8 @@ function buildEmailHtml({
       ? `
       <div style="margin: 28px 0; text-align: center; padding: 24px; background: #F0E8D6; border-radius: 2px;">
         <p style="font-size: 13px; color: #7A6A50; line-height: 1.8; margin: 0;">
-          아직 메시지가 없어요.<br/>
-          <a href="${writeUrl}" style="color: #C4956A; text-decoration: none;">당신이 첫 번째 마음을 남겨보는 건 어떨까요?</a>
+          아직 조각이 없어요.<br/>
+          <a href="${writeUrl}" style="color: #C4956A; text-decoration: none;">당신이 첫 번째 다정한 조각을 보태볼까요?</a>
         </p>
       </div>`
       : "";
@@ -193,6 +193,12 @@ function buildEmailHtml({
       <p style="font-size: 11px; color: #B0A08A; line-height: 1.8; margin: 0;">
         이 메일은 느슨한 촛불 · 조각조각에서 발송되었습니다.<br/>
         <a href="${pageUrl}" style="color: #B0A08A;">케이크 보기</a>
+      </p>
+      <p style="font-size: 10px; color: #C4B99A; line-height: 1.6; margin: 8px 0 0; font-style: italic;">
+        조각조각 모인 마음은 쉽게 무너지지 않습니다.
+      </p>
+      <p style="font-size: 10px; color: #C4B99A; line-height: 1.6; margin: 6px 0 0;">
+        당신의 고요함을 존중합니다. 이 알림이 불편하시면 회신 없이 무시해주셔도 괜찮아요.
       </p>
     </div>
 
