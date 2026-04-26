@@ -166,7 +166,7 @@ export default function HomePage() {
         body: JSON.stringify({ birthday, name: name.trim() || "익명", email: email.trim() || null, preferences }),
       });
 
-      if (!response.ok) throw new Error("서버 오류가 발생했습니다.");
+      if (!response.ok) throw new Error("잠시 문제가 생겼어요.");
 
       const data = await response.json();
 

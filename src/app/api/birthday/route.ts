@@ -62,7 +62,7 @@ export async function GET(request: Request) {
   if (msgError) {
     console.error("[GET /api/birthday] messages fetch error:", msgError);
     return NextResponse.json(
-      { error: "메시지를 불러오는 중 오류가 발생했습니다." },
+      { error: "조각들을 불러오는 중에 문제가 생겼어요. 잠시 후 다시 시도해주세요 🙏" },
       { status: 500 }
     );
   }
@@ -92,7 +92,7 @@ export async function POST(request: Request) {
     // 유효성 검사
     if (!birthday) {
       return NextResponse.json(
-        { error: "생일은 필수 입력값입니다." },
+        { error: "생일을 입력해주세요. 한 줄의 날짜면 충분해요." },
         { status: 400 }
       );
     }
@@ -100,7 +100,7 @@ export async function POST(request: Request) {
     const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
     if (!dateRegex.test(birthday)) {
       return NextResponse.json(
-        { error: "올바른 날짜 형식이 아닙니다." },
+        { error: "날짜를 다시 확인해주세요 🙏" },
         { status: 400 }
       );
     }
@@ -108,17 +108,17 @@ export async function POST(request: Request) {
     const birthdayDate = new Date(birthday);
     if (isNaN(birthdayDate.getTime())) {
       return NextResponse.json(
-        { error: "유효하지 않은 날짜입니다." },
+        { error: "날짜를 다시 확인해주세요 🙏" },
         { status: 400 }
       );
     }
 
-    // 미래 날짜 방지 (오늘 이후 생일은 불가)
-    const today = new Date();
-    today.setHours(23, 59, 59, 999);
-    if (birthdayDate > today) {
+    // 미래 날짜 방지 (KST 기준 내일 이후는 불가)
+    const nowKST = new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Seoul" }));
+    nowKST.setHours(23, 59, 59, 999);
+    if (birthdayDate > nowKST) {
       return NextResponse.json(
-        { error: "생일은 오늘 날짜 이전이어야 합니다." },
+        { error: "아직 오지 않은 생일이에요. 날짜를 다시 확인해주세요." },
         { status: 400 }
       );
     }
@@ -139,7 +139,7 @@ export async function POST(request: Request) {
     if (error) {
       console.error("[POST /api/birthday] Supabase insert error:", error);
       return NextResponse.json(
-        { error: "저장 중 오류가 발생했습니다." },
+        { error: "잠시 문제가 생겼어요. 조금 후에 다시 시도해주세요. 🙏" },
         { status: 500 }
       );
     }
@@ -148,7 +148,7 @@ export async function POST(request: Request) {
   } catch (err) {
     console.error("[POST /api/birthday] error:", err);
     return NextResponse.json(
-      { error: "서버 오류가 발생했습니다." },
+      { error: "잠시 문제가 생겼어요. 조금 후에 다시 시도해주세요. 🙏" },
       { status: 500 }
     );
   }

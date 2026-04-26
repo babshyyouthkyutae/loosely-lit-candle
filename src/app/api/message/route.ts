@@ -51,12 +51,12 @@ export async function POST(request: Request) {
 
     if (insertError) {
       console.error("[POST /api/message] insert error:", insertError);
-      return NextResponse.json({ error: "조각 저장 중 오류가 발생했습니다." }, { status: 500 });
+      return NextResponse.json({ error: "조각을 저장하는 중에 문제가 생겼어요. 조금 후에 다시 시도해주세요 🙏" }, { status: 500 });
     }
 
     return NextResponse.json({ success: true, message: piece }, { status: 201 });
   } catch (err) {
     console.error("[POST /api/message] error:", err);
-    return NextResponse.json({ error: "서버 오류가 발생했습니다." }, { status: 500 });
+    return NextResponse.json({ error: "잠시 문제가 생겼어요. 조금 후에 다시 시도해주세요 🙏" }, { status: 500 });
   }
 }
