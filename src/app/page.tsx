@@ -138,6 +138,42 @@ export default function HomePage() {
   const [submitted, setSubmitted] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
 
+  // ─── 첫 방문 웰컴 시퀀스 ──────────────────────────────
+  const [isFirstVisit, setIsFirstVisit] = useState(false);
+  const [introStep, setIntroStep] = useState(0); // 0: 체크 중, 1~3: 인트로 슬라이드
+  const [introComplete, setIntroComplete] = useState(false);
+
+  useEffect(() => {
+    try {
+      const visited = localStorage.getItem("jj_visited");
+      if (!visited) {
+        setIsFirstVisit(true);
+        setIntroStep(1);
+      } else {
+        setIntroComplete(true);
+      }
+    } catch {
+      setIntroComplete(true);
+    }
+  }, []);
+
+  const advanceIntro = () => {
+    if (introStep < 3) {
+      setIntroStep(prev => prev + 1);
+    } else {
+      // 인트로 완료
+      try { localStorage.setItem("jj_visited", "1"); } catch { /* noop */ }
+      setIsFirstVisit(false);
+      setIntroComplete(true);
+    }
+  };
+
+  const skipIntro = () => {
+    try { localStorage.setItem("jj_visited", "1"); } catch { /* noop */ }
+    setIsFirstVisit(false);
+    setIntroComplete(true);
+  };
+
   // 쉴 카테고리 키워드 감지 (무드라이트 트리거용)
   const REST_KEYWORDS = ["조용한 휴식", "혼자만의 시간", "느린 걸음"];
   const hasRestKeyword = preferences.some(p => REST_KEYWORDS.includes(p));
@@ -185,6 +221,144 @@ export default function HomePage() {
       setIsLoading(false);
     }
   };
+
+  // ─── 첫 방문 웰컴 시퀀스 렌더링 ─────────────────────────
+  if (isFirstVisit && !introComplete) {
+    const introSlides = [
+      {
+        title: "멀리서 켜둔\n마음 하나",
+        body: "당신이 어디에 있든, 어떤 하루를 보내고 있든\n조용히 켜진 촛불 하나가 당신을 기다리고 있어요.",
+        cta: "다음",
+      },
+      {
+        title: "조각조각 모여든\n다정함으로",
+        body: "이곳에 생일을 등록하면\n소중한 사람들이 당신만을 위한\n케이크 조각을 하나씩 보태줄 수 있어요.\n\n완벽하지 않아도, 서툴러도 괜찮아요.",
+        cta: "다음",
+      },
+      {
+        title: "지금 잠시\n멈춰있어도 괜찮아요",
+        body: "밖에 나가지 않아도, 아무것도 하지 않아도\n당신의 존재는 그 자체로 이미 충분한 축하니까요.\n\n준비가 되면, 당신만의 케이크 판을 만들어 보세요.",
+        cta: "시작하기",
+      },
+    ];
+
+    const slide = introSlides[introStep - 1];
+    if (!slide) return null;
+
+    return (
+      <main
+        style={{
+          minHeight: "100vh",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "2rem 1.5rem",
+          position: "relative",
+          zIndex: 1,
+          cursor: "pointer",
+        }}
+        onClick={advanceIntro}
+      >
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={introStep}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
+            style={{ textAlign: "center", maxWidth: 360 }}
+          >
+            {/* 촛불 (첫 슬라이드만 크게) */}
+            <div style={{ marginBottom: introStep === 1 ? "2.5rem" : "1.5rem" }}>
+              <DigitalCandle flicker={introStep === 3} size={introStep === 1 ? 56 : 36} />
+            </div>
+
+            {/* 단계 인디케이터 */}
+            <div style={{
+              display: "flex", gap: "0.375rem", justifyContent: "center",
+              marginBottom: "1.5rem",
+            }}>
+              {[1, 2, 3].map(step => (
+                <div key={step} style={{
+                  width: step === introStep ? 18 : 5,
+                  height: 5,
+                  borderRadius: "999px",
+                  background: step === introStep ? "var(--accent)" : "var(--border)",
+                  transition: "all 0.4s ease",
+                }} />
+              ))}
+            </div>
+
+            <h2 style={{
+              fontSize: "1.35rem",
+              fontWeight: 400,
+              color: "var(--text-primary)",
+              lineHeight: 1.7,
+              marginBottom: "1.25rem",
+              whiteSpace: "pre-line",
+            }}>
+              {slide.title}
+            </h2>
+
+            <p style={{
+              fontSize: "0.78rem",
+              color: "var(--text-secondary)",
+              lineHeight: 2.1,
+              fontWeight: 300,
+              letterSpacing: "0.03em",
+              whiteSpace: "pre-line",
+              marginBottom: "2rem",
+            }}>
+              {slide.body}
+            </p>
+
+            {/* CTA 버튼 */}
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={(e) => { e.stopPropagation(); advanceIntro(); }}
+              style={{
+                padding: "0.875rem 2.5rem",
+                background: introStep === 3 ? "var(--text-primary)" : "transparent",
+                color: introStep === 3 ? "var(--ivory)" : "var(--text-secondary)",
+                border: introStep === 3 ? "none" : "1px solid var(--border)",
+                borderRadius: "2px",
+                fontSize: "0.8rem",
+                letterSpacing: "0.1em",
+                cursor: "pointer",
+                fontFamily: "inherit",
+                fontWeight: 400,
+                transition: "all 0.3s ease",
+              }}
+            >
+              {slide.cta}
+            </motion.button>
+          </motion.div>
+        </AnimatePresence>
+
+        {/* 건너뛰기 */}
+        <motion.button
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.5 }}
+          onClick={(e) => { e.stopPropagation(); skipIntro(); }}
+          style={{
+            position: "fixed", bottom: "2rem",
+            background: "none", border: "none",
+            color: "var(--text-muted)",
+            fontSize: "0.65rem",
+            letterSpacing: "0.1em",
+            cursor: "pointer",
+            fontFamily: "inherit",
+            opacity: 0.6,
+          }}
+        >
+          건너뛰기
+        </motion.button>
+      </main>
+    );
+  }
 
   // 등록 완료 인터스티셜
   if (submitted) {
