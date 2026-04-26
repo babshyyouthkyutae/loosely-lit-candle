@@ -23,7 +23,7 @@ export async function GET(request: Request) {
 
   if (bdError || !birthday) {
     return NextResponse.json(
-      { error: "찾을 수 없는 롤링페이퍼입니다." },
+      { error: "찾을 수 없는 케이크입니다." },
       { status: 404 }
     );
   }

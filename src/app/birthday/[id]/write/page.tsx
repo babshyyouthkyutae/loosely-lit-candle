@@ -130,7 +130,7 @@ function ToppingTray({ keywords, recipientName, onTagAdded }: ToppingTrayProps) 
         fontSize: "0.65rem", letterSpacing: "0.18em", color: "var(--text-muted)",
         textTransform: "uppercase", marginBottom: "1rem", textAlign: "center",
       }}>
-        토핑 쌍반 — 클릭하면 메시지에 태그되어요
+        토핑 쟁반 — 클릭하면 조각에 태그되어요
       </p>
 
       <div style={{
@@ -562,7 +562,7 @@ export default function WritePage() {
   if (notFound || !record) {
     return (
       <main style={{ ...centeredStyle, flexDirection: "column", gap: "1rem" }}>
-        <p style={{ fontSize: "0.9rem", color: "var(--text-secondary)" }}>존재하지 않는 롤링페이퍼예요.</p>
+        <p style={{ fontSize: "0.9rem", color: "var(--text-secondary)", lineHeight: 1.8, fontWeight: 300 }}>찾을 수 없는 케이크예요.<br />링크가 잘못되었거나 삭제된 케이크일 수 있어요.</p>
         <Link href="/" style={backLinkStyle}>처음으로 돌아가기</Link>
       </main>
     );
@@ -595,14 +595,14 @@ export default function WritePage() {
               style={primaryBtnStyle}
               onMouseEnter={(e) => { e.currentTarget.style.background = "var(--accent)"; }}
               onMouseLeave={(e) => { e.currentTarget.style.background = "var(--text-primary)"; }}>
-              롤링페이퍼 보러가기
+              케이크 보러가기
             </button>
             <button id="write-another-btn"
               onClick={() => { setContent(""); setAuthor(""); setSuccess(false); setIsSubmitting(false); }}
               style={secondaryBtnStyle}
               onMouseEnter={(e) => { e.currentTarget.style.borderColor = "var(--accent-light)"; e.currentTarget.style.color = "var(--accent)"; }}
               onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.color = "var(--text-secondary)"; }}>
-              메시지 한 장 더 쓰기
+              조각 하나 더 보태기
             </button>
           </div>
         </motion.div>
@@ -640,7 +640,7 @@ export default function WritePage() {
           <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
             <path d="M8 2L4 6l4 4" />
           </svg>
-          {record.name}님의 롤링페이퍼로
+          {record.name}님의 케이크로
         </Link>
       </nav>
 

@@ -177,14 +177,93 @@ export default function HomePage() {
         localStorage.setItem("owned_cakes", JSON.stringify(owned));
       } catch { /* SSR / private browsing fallback */ }
 
-      // 촛불 일렁임 트리거 후 페이지 이동
+      // 촛불 일렁임 트리거 → 감사 인터스티셜 → 페이지 이동
       setSubmitted(true);
-      setTimeout(() => router.push(`/birthday/${data.id}`), 800);
+      setTimeout(() => router.push(`/birthday/${data.id}`), 2800);
     } catch {
       setError("잠시 문제가 생겼어요. 다시 시도해주세요.");
       setIsLoading(false);
     }
   };
+
+  // 등록 완료 인터스티셜
+  if (submitted) {
+    return (
+      <main
+        style={{
+          minHeight: "100vh",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "2rem 1.5rem",
+          position: "relative",
+          zIndex: 1,
+        }}
+      >
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+          style={{ textAlign: "center", maxWidth: 380 }}
+        >
+          {/* 촛불 일렁임 */}
+          <div style={{ marginBottom: "2rem" }}>
+            <DigitalCandle flicker={true} size={52} />
+          </div>
+
+          <motion.h2
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4, duration: 0.7 }}
+            style={{
+              fontSize: "1.3rem",
+              fontWeight: 400,
+              color: "var(--text-primary)",
+              lineHeight: 1.7,
+              marginBottom: "1rem",
+            }}
+          >
+            당신만의 케이크 판이
+            <br />
+            준비되었어요 🕯️
+          </motion.h2>
+
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.9, duration: 0.8 }}
+            style={{
+              fontSize: "0.78rem",
+              color: "var(--text-secondary)",
+              lineHeight: 2,
+              fontWeight: 300,
+              letterSpacing: "0.04em",
+            }}
+          >
+            이제 링크를 공유하면
+            <br />
+            다정한 조각들이 하나씩 모여들거예요.
+          </motion.p>
+
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 1.6, duration: 0.8 }}
+            style={{
+              marginTop: "2rem",
+              fontSize: "0.65rem",
+              color: "var(--text-muted)",
+              fontStyle: "italic",
+              letterSpacing: "0.06em",
+            }}
+          >
+            잠시 후 케이크 페이지로 이동합니다…
+          </motion.p>
+        </motion.div>
+      </main>
+    );
+  }
 
   return (
     <main
@@ -601,7 +680,7 @@ export default function HomePage() {
               ))}
             </div>
 
-            {/* 우드 쌍반 — 선택된 토핑 모음 */}
+            {/* 우드 쟁반 — 선택된 토핑 모음 */}
             <AnimatePresence>
               {preferences.length > 0 && (
                 <motion.div
@@ -619,7 +698,7 @@ export default function HomePage() {
                     overflow: "hidden",
                   }}
                 >
-                  {/* 우드 쌍반 상단 반사광 */}
+                  {/* 우드 쟁반 상단 반사광 */}
                   <div style={{
                     position: "absolute", top: 0, left: "8%", right: "8%",
                     height: "1px",
@@ -630,7 +709,7 @@ export default function HomePage() {
                     fontSize: "0.6rem", letterSpacing: "0.15em", color: "var(--text-muted)",
                     marginBottom: "0.5rem", textTransform: "uppercase",
                   }}>
-                    쌍반 위의 토핑들
+                    쟁반 위의 토핑들
                   </p>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: "0.375rem" }}>
                     {preferences.map(kw => {

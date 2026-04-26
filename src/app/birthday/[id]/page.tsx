@@ -410,6 +410,26 @@ export default function BirthdayPage() {
                 : "잠시 후면 읽을 수 있어요."}
             </span>
           </p>
+
+          {/* 격려 문구 */}
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.8, duration: 0.6 }}
+            style={{
+              marginTop: "1.5rem",
+              fontSize: "0.72rem",
+              color: "var(--accent-light)",
+              lineHeight: 2,
+              fontWeight: 300,
+              fontStyle: "italic",
+              letterSpacing: "0.04em",
+            }}
+          >
+            링크를 공유해보세요.
+            <br />
+            멀리서, 조용히, 다정한 조각들이 모여들 거예요.
+          </motion.p>
         </motion.div>
       )}
 

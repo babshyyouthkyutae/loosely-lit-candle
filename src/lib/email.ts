@@ -61,20 +61,20 @@ function buildEmailHtml({
   const headlineMap: Record<number, { title: string; body: string; cta: string; ctaUrl: string }> = {
     7: {
       title: "일주일 뒤가 당신의 생일이에요",
-      body: "아직 7일이 남았어요. 롤링페이퍼 링크를 소중한 사람들과 나눠보세요.<br/>작은 마음들이 하나씩 쌓여 당신의 생일을 채울 거예요.",
-      cta: "롤링페이퍼 링크 공유하기",
+      body: "아직 7일이 남았어요. 케이크 링크를 소중한 사람들과 나눠보세요.<br/>작은 마음들이 하나씩 쌓여 당신의 생일을 채울 거예요.",
+      cta: "케이크 링크 공유하기",
       ctaUrl: pageUrl,
     },
     1: {
       title: "내일이 당신의 생일이에요",
       body: "벌써 하루가 남았어요.<br/>누군가의 마음이 이미 당신을 기다리고 있을지도 몰라요.",
-      cta: "롤링페이퍼 확인하기",
+      cta: "케이크 확인하기",
       ctaUrl: pageUrl,
     },
     0: {
       title: "오늘이 당신의 생일이에요 🎂",
       body: "태어나줘서 고마워요.<br/>당신이 있어 세상이 조금 더 따뜻해요.",
-      cta: "마음이 담긴 롤링페이퍼 보러 가기",
+      cta: "마음이 담긴 케이크 보러 가기",
       ctaUrl: pageUrl,
     },
   };
@@ -191,8 +191,8 @@ function buildEmailHtml({
     <!-- 푸터 -->
     <div style="text-align: center; margin-top: 28px;">
       <p style="font-size: 11px; color: #B0A08A; line-height: 1.8; margin: 0;">
-        이 메일은 느슨한 촛불 롤링페이퍼에서 발송되었습니다.<br/>
-        <a href="${pageUrl}" style="color: #B0A08A;">롤링페이퍼 보기</a>
+        이 메일은 느슨한 촛불 · 조각조각에서 발송되었습니다.<br/>
+        <a href="${pageUrl}" style="color: #B0A08A;">케이크 보기</a>
       </p>
     </div>
 
