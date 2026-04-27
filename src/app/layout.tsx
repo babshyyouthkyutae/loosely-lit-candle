@@ -28,6 +28,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ko">
+      <head>
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="theme-color" content="#2C2416" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-mobile-web-app-title" content="조각조각" />
+        <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+      </head>
       <body className={`${nanumMyeongjo.variable}`}>
         {/* Ambient candle glow elements */}
         <div
@@ -41,6 +49,20 @@ export default function RootLayout({
           aria-hidden="true"
         />
         {children}
+        {/* Service Worker 등록 */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if ('serviceWorker' in navigator) {
+                window.addEventListener('load', function() {
+                  navigator.serviceWorker.register('/sw.js')
+                    .then(function(reg) { console.log('[SW] 등록 성공:', reg.scope); })
+                    .catch(function(err) { console.log('[SW] 등록 실패:', err); });
+                });
+              }
+            `,
+          }}
+        />
       </body>
     </html>
   );

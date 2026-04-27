@@ -1,0 +1,26 @@
+{
+  "name": "느슨한 촛불 — 조각조각",
+  "short_name": "조각조각",
+  "description": "은둔하고 고립된 청년들을 위한 디지털 케이크. 조각조각 모인 마음은 쉽게 무너지지 않습니다.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F8F4ED",
+  "theme_color": "#2C2416",
+  "orientation": "portrait",
+  "categories": ["social", "lifestyle"],
+  "lang": "ko",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
